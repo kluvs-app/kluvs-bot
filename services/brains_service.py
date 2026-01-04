@@ -3,6 +3,11 @@ Brains Service - AI intelligence layer powered by kluvs-brain
 
 This service provides the bot's AI capabilities through the kluvs-brain SDK,
 which handles RAG-powered questions, book summaries, and Socratic tutoring.
+
+The kluvs-brain engine now supports:
+- Enhanced metadata with page_label and content types (CHUNK, GLOSSARY, SUMMARY)
+- Improved match thresholds for better quality results
+- Scope-aware SQL filtering
 """
 from typing import Optional
 from kluvs_brain import SocraticEngine, BrainError, RetrievalError, ReasoningError
@@ -31,17 +36,25 @@ class BrainsService:
 
         Raises:
             ValueError: If any required credentials are missing
+
+        Note:
+            The underlying SocraticEngine uses:
+            - AsyncOpenAI for reasoning
+            - OpenAI text-embedding-3-small for vector search
+            - GPT-4o for generating responses
+            - Scope-aware SQL filtering with match_threshold=0.2
         """
         if not all([supabase_url, supabase_key, openai_key]):
             raise ValueError("All API credentials required for BrainsService")
 
+        print("[INFO] Initializing BrainsService with SocraticEngine")
         self.engine = SocraticEngine(supabase_url, supabase_key, openai_key)
 
         # Hardcoded scope for experimental phase
         # TODO: Make this dynamic based on book/session data
         self.default_scope = "humanitarian_ai_experiment"
 
-        print("[INFO] BrainsService initialized with experimental scope")
+        print(f"[INFO] BrainsService initialized with default scope: {self.default_scope}")
 
     async def ask(
         self,
@@ -70,39 +83,49 @@ class BrainsService:
             BrainError: For other brain-related errors
 
         Note:
-            The SocraticEngine.ask() method is async in kluvs-brain.
+            The SocraticEngine now supports:
+            - Enhanced metadata with page_label and type fields
+            - Content types: CHUNK, GLOSSARY, SUMMARY
+            - Match threshold of 0.2 for better quality
+            - Comprehensive logging for debugging
         """
         actual_scope = scope or self.default_scope
 
-        print(f"[INFO] BrainsService.ask() called - Book: '{book_title}', Scope: '{actual_scope}'")
+        print(f"[INFO] Processing question for book='{book_title}', scope='{actual_scope}'")
+        print(f"[INFO] Question: {question}")
 
         try:
             # Call the async SocraticEngine.ask() method
+            # This will:
+            # 1. Generate embeddings for the question
+            # 2. Search vector DB with scope-aware filtering
+            # 3. Build context from retrieved chunks (with type and page_label)
+            # 4. Generate Socratic response using GPT-4o
             response = await self.engine.ask(
-                question,
-                actual_scope,
-                book_title
+                student_query=question,
+                scope=actual_scope,
+                book_title=book_title
             )
 
-            print(f"[SUCCESS] BrainsService.ask() completed for '{book_title}'")
+            print(f"[SUCCESS] Successfully generated response for '{book_title}'")
             return response
 
         except RetrievalError as e:
             # Book not found or database unavailable
-            print(f"[ERROR] RetrievalError in BrainsService.ask(): {str(e)}")
+            print(f"[ERROR] RetrievalError: {str(e)}")
             raise
 
         except ReasoningError as e:
             # AI engine failed to generate response
-            print(f"[ERROR] ReasoningError in BrainsService.ask(): {str(e)}")
+            print(f"[ERROR] ReasoningError: {str(e)}")
             raise
 
         except BrainError as e:
             # Other brain-related errors
-            print(f"[ERROR] BrainError in BrainsService.ask(): {str(e)}")
+            print(f"[ERROR] BrainError: {str(e)}")
             raise
 
         except Exception as e:
             # Unexpected errors - wrap in BrainError for consistency
-            print(f"[ERROR] Unexpected error in BrainsService.ask(): {str(e)}")
+            print(f"[ERROR] Unexpected error: {str(e)}")
             raise BrainError(f"Unexpected error: {str(e)}")
