@@ -1,23 +1,22 @@
 """
-Brains Service - AI intelligence layer powered by kluvs-reader
+Brains Service - AI intelligence layer powered by kluvs-brain
 
-This service provides the bot's AI capabilities through the kluvs-reader SDK,
+This service provides the bot's AI capabilities through the kluvs-brain SDK,
 which handles RAG-powered questions, book summaries, and Socratic tutoring.
 """
-import asyncio
 from typing import Optional
-from kluvs_reader import SocraticEngine
+from kluvs_brain import SocraticEngine, BrainError, RetrievalError, ReasoningError
 
 
 class BrainsService:
     """
-    AI service wrapper for kluvs-reader's SocraticEngine.
+    AI service wrapper for kluvs-brain's SocraticEngine.
 
     This service provides a Discord-bot-friendly async interface to the AI backend,
     handling RAG-powered questions about books using Socratic tutoring methodology.
 
     Attributes:
-        engine: The underlying SocraticEngine from kluvs-reader
+        engine: The underlying SocraticEngine from kluvs-brain
         default_scope: Hardcoded scope filter for the experimental phase
     """
 
@@ -66,22 +65,20 @@ class BrainsService:
             Socratic response with hints, context, and follow-up questions
 
         Raises:
-            Exception: If the underlying AI service encounters an error
+            RetrievalError: If no knowledge is found or database is unavailable
+            ReasoningError: If the AI engine fails to generate a response
+            BrainError: For other brain-related errors
 
         Note:
-            The SocraticEngine.ask() method is currently synchronous, so we
-            wrap it in asyncio.to_thread() to avoid blocking the Discord event loop.
-            TODO: Make SocraticEngine.ask() async in kluvs-reader
+            The SocraticEngine.ask() method is async in kluvs-brain.
         """
         actual_scope = scope or self.default_scope
 
         print(f"[INFO] BrainsService.ask() called - Book: '{book_title}', Scope: '{actual_scope}'")
 
         try:
-            # Wrap synchronous call in thread to avoid blocking Discord
-            # TODO: Remove this wrapper once SocraticEngine.ask() becomes async
-            response = await asyncio.to_thread(
-                self.engine.ask,
+            # Call the async SocraticEngine.ask() method
+            response = await self.engine.ask(
                 question,
                 actual_scope,
                 book_title
@@ -90,7 +87,22 @@ class BrainsService:
             print(f"[SUCCESS] BrainsService.ask() completed for '{book_title}'")
             return response
 
-        except Exception as e:
-            # Let errors bubble up - bot's error handler will catch them
-            print(f"[ERROR] BrainsService.ask() failed: {str(e)}")
+        except RetrievalError as e:
+            # Book not found or database unavailable
+            print(f"[ERROR] RetrievalError in BrainsService.ask(): {str(e)}")
             raise
+
+        except ReasoningError as e:
+            # AI engine failed to generate response
+            print(f"[ERROR] ReasoningError in BrainsService.ask(): {str(e)}")
+            raise
+
+        except BrainError as e:
+            # Other brain-related errors
+            print(f"[ERROR] BrainError in BrainsService.ask(): {str(e)}")
+            raise
+
+        except Exception as e:
+            # Unexpected errors - wrap in BrainError for consistency
+            print(f"[ERROR] Unexpected error in BrainsService.ask(): {str(e)}")
+            raise BrainError(f"Unexpected error: {str(e)}")

@@ -1,7 +1,7 @@
 """
-Brains commands - AI-powered interactions via kluvs-reader
+Brains commands - AI-powered interactions via kluvs-brain
 
-This module provides commands that leverage the brains service (kluvs-reader SDK)
+This module provides commands that leverage the brains service (kluvs-brain SDK)
 for intelligent, RAG-powered interactions about books.
 """
 import discord
@@ -9,6 +9,7 @@ from discord import app_commands
 
 from utils.embeds import create_embed
 from api.bookclub_api import ResourceNotFoundError
+from kluvs_brain import BrainError, RetrievalError, ReasoningError
 
 
 def setup_brains_commands(bot):
@@ -89,12 +90,48 @@ def setup_brains_commands(bot):
             # It will show a user-friendly "book club not found" message
             raise
 
+        except RetrievalError as e:
+            # Book not found in knowledge base or database unavailable
+            print(f"[ERROR] RetrievalError in /ask: {str(e)}")
+            error_embed = create_embed(
+                title="📚 Book Not Found",
+                description=(
+                    f"I couldn't find information about **{book_title}** in my knowledge base. "
+                    "The book may not be indexed yet, or there might be a database issue."
+                ),
+                color_key="error"
+            )
+            await interaction.followup.send(embed=error_embed)
+
+        except ReasoningError as e:
+            # AI engine failed to generate response
+            print(f"[ERROR] ReasoningError in /ask: {str(e)}")
+            error_embed = create_embed(
+                title="🤖 AI Error",
+                description=(
+                    "I encountered an error while generating a response. "
+                    "This might be due to an OpenAI service issue. Please try again in a moment."
+                ),
+                color_key="error"
+            )
+            await interaction.followup.send(embed=error_embed)
+
+        except BrainError as e:
+            # Other brain-related errors
+            print(f"[ERROR] BrainError in /ask: {str(e)}")
+            error_embed = create_embed(
+                title="❌ Brain Error",
+                description="I encountered an unexpected error while processing your question. Please try again later.",
+                color_key="error"
+            )
+            await interaction.followup.send(embed=error_embed)
+
         except Exception as e:
-            # Catch any other errors and show user-friendly message
-            print(f"[ERROR] /ask command failed: {str(e)}")
+            # Catch any other unexpected errors
+            print(f"[ERROR] Unexpected error in /ask: {str(e)}")
             error_embed = create_embed(
                 title="❌ Error",
-                description="I encountered an error while processing your question. Please try again later.",
+                description="I encountered an unexpected error. Please try again later.",
                 color_key="error"
             )
             await interaction.followup.send(embed=error_embed)
