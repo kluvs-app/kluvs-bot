@@ -52,7 +52,7 @@ class BrainsService:
 
         # Hardcoded scope for experimental phase
         # TODO: Make this dynamic based on book/session data
-        self.default_scope = "humanitarian_ai_experiment"
+        self.default_scope = "montemayor_prospect_ai"
 
         print(f"[INFO] BrainsService initialized with default scope: {self.default_scope}")
 
