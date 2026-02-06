@@ -9,9 +9,11 @@ PIP = $(VENV)/bin/pip
 help:
 	@echo "--- Quill the Librarian: Command Shortcuts ---"
 	@echo "install        : Create venv and install all dependencies"
+	@echo "update-brain   : Force update kluvs-brain from remote repo"
 	@echo "test           : Run tests using venv (Matches VS Code)"
 	@echo "coverage       : Run tests with terminal coverage report"
 	@echo "run            : Run the bot using the virtual environment"
+	@echo "run-fresh      : Update kluvs-brain and run the bot"
 
 $(VENV)/bin/activate: requirements.txt
 	@echo "Creating virtual environment..."
@@ -38,6 +40,14 @@ coverage-html: install
 
 run: install
 	$(PYTHON) main.py
+
+update-brain:
+	@echo "Updating kluvs-brain from remote repository..."
+	$(PIP) install --upgrade --force-reinstall git+https://github.com/ivangarzab/kluvs-brain.git
+	@echo "kluvs-brain updated successfully!"
+
+run-fresh: update-brain run
+	@echo "Bot running with latest kluvs-brain!"
 
 clean:
 	rm -rf __pycache__ */__pycache__ tests/__pycache__
