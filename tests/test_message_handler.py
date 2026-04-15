@@ -19,7 +19,7 @@ class TestMessageHandler(unittest.IsolatedAsyncioTestCase):
         self.bot.user = MagicMock()
         self.bot.user.id = 999
         self.bot.config = MagicMock()
-        self.bot.config.DEFAULT_CHANNEL = 123456
+        self.bot.api.get_server_clubs.return_value = [{'id': 'club-1', 'discord_channel': '123456'}]
         self.bot.db = MagicMock()
         self.bot.process_commands = AsyncMock()
         self.bot.get_channel = MagicMock()
@@ -182,6 +182,8 @@ class TestMessageHandler(unittest.IsolatedAsyncioTestCase):
         member.name = "NewUser"
         member.mention = "@NewUser"
         member.id = 12345
+        member.guild = MagicMock()
+        member.guild.id = 111111
 
         # Mock the bot.get_channel method
         channel = AsyncMock()
@@ -212,6 +214,8 @@ class TestMessageHandler(unittest.IsolatedAsyncioTestCase):
         member = MagicMock()
         member.name = "User"
         member.id = 99999
+        member.guild = MagicMock()
+        member.guild.id = 111111
 
         # Return None for channel
         self.bot.get_channel.return_value = None

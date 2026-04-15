@@ -17,7 +17,10 @@ class TestSchedulersComprehensive(unittest.TestCase):
         # Create a mock bot
         self.bot = MagicMock()
         self.bot.config = MagicMock()
-        self.bot.config.DEFAULT_CHANNEL = 123456
+        mock_guild = MagicMock()
+        mock_guild.id = 111111
+        self.bot.guilds = [mock_guild]
+        self.bot.api.get_server_clubs.return_value = [{'id': 'club-1', 'discord_channel': '123456'}]
         self.bot.get_channel = MagicMock()
 
     @patch('utils.schedulers.tasks.loop')

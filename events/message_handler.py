@@ -41,7 +41,15 @@ def setup_message_handlers(bot):
     async def on_member_join(member):
         """Welcome new members."""
         print(f"New member joined: {member.name}")
-        channel = bot.get_channel(bot.config.DEFAULT_CHANNEL)
+        channel = None
+        try:
+            clubs = bot.api.get_server_clubs(str(member.guild.id))
+            if clubs:
+                discord_channel_id = clubs[0].get('discord_channel')
+                if discord_channel_id:
+                    channel = bot.get_channel(int(discord_channel_id))
+        except Exception as e:
+            print(f"[ERROR] Failed to fetch clubs for guild {member.guild.id}: {e}")
         if channel:
             greetings = ["Welcome", "Bienvenido", "Willkommen", "Bienvenue", "Bem-vindo", "Welkom", "Καλως"]
             embed = create_embed(

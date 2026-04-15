@@ -13,7 +13,7 @@ from discord.ext import commands
 from config import BotConfig
 from api import BookClubAPI
 from services.openai_service import OpenAIService
-from utils.constants import DEFAULT_CHANNEL, GENERIC_ERRORS, RESOURCE_NOT_FOUND_MESSAGES, VALIDATION_MESSAGES, AUTH_MESSAGES, CONNECTION_MESSAGES
+from utils.constants import GENERIC_ERRORS, RESOURCE_NOT_FOUND_MESSAGES, VALIDATION_MESSAGES, AUTH_MESSAGES, CONNECTION_MESSAGES
 from events.message_handler import setup_message_handlers
 from utils.schedulers import setup_scheduled_tasks
 
@@ -154,10 +154,11 @@ class BookClubBot(commands.Bot):
         # For critical errors, you might want to notify yourself
         if event == "on_ready" or event == "setup_hook":
             try:
-                # Get a channel to send error notifications to
-                channel = self.get_channel(self.DEFAULT_CHANNEL)
-                if channel:
-                    await channel.send("⚠️ The bot encountered a critical error. Please check the logs.")
+                for guild in self.guilds:
+                    channel = guild.system_channel
+                    if channel:
+                        await channel.send("⚠️ The bot encountered a critical error. Please check the logs.")
+                        break
             except:
                 # If this fails, at least we tried
                 pass

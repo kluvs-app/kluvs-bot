@@ -48,7 +48,6 @@ class TestBotConfig(unittest.TestCase):
         self.assertEqual(config.SUPABASE_KEY, "dev_test_key")
         self.assertEqual(config.KEY_WEATHER, "test_weather_key")
         self.assertEqual(config.KEY_OPENAI, "test_openai_key")
-        self.assertEqual(config.DEFAULT_CLUB_ID, "club-1")
 
         # Verify debug output was printed
         mock_print.assert_any_call("[DEBUG] ~~~~~~~~~~~~ Running in development mode ~~~~~~~~~~~~")

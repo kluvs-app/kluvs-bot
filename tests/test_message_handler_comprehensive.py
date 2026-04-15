@@ -17,7 +17,7 @@ class TestMessageHandlerComprehensive(unittest.TestCase):
         self.bot.user = MagicMock()
         self.bot.user.id = 123456
         self.bot.config = MagicMock()
-        self.bot.config.DEFAULT_CHANNEL = 987654
+        self.bot.api.get_server_clubs.return_value = [{'id': 'club-1', 'discord_channel': '123456'}]
         self.bot.db = MagicMock()
         self.bot.db.save_club = MagicMock()
         self.bot.process_commands = AsyncMock()
@@ -160,6 +160,8 @@ class TestMessageHandlerComprehensive(unittest.TestCase):
         member.name = "NewUser"
         member.mention = "@NewUser"
         member.id = 555
+        member.guild = MagicMock()
+        member.guild.id = 111111
 
         # Mock channel
         mock_channel = AsyncMock()
@@ -170,8 +172,8 @@ class TestMessageHandlerComprehensive(unittest.TestCase):
         on_member_join = self.events['on_member_join']
         await on_member_join(member)
 
-        # Verify channel was retrieved
-        self.bot.get_channel.assert_called_once_with(987654)
+        # Verify channel was retrieved using the club's discord_channel
+        self.bot.get_channel.assert_called_once_with(123456)
 
         # Verify welcome message was sent
         mock_channel.send.assert_called_once()
@@ -187,6 +189,8 @@ class TestMessageHandlerComprehensive(unittest.TestCase):
         member.name = "NewUser"
         member.mention = "@NewUser"
         member.id = 777
+        member.guild = MagicMock()
+        member.guild.id = 111111
 
         # Mock channel
         mock_channel = AsyncMock()
@@ -205,6 +209,8 @@ class TestMessageHandlerComprehensive(unittest.TestCase):
         member = MagicMock()
         member.name = "NewUser"
         member.id = 888
+        member.guild = MagicMock()
+        member.guild.id = 111111
 
         # Mock channel as None
         self.bot.get_channel.return_value = None

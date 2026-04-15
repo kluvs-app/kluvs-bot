@@ -9,9 +9,6 @@ class BotConfig:
     def __init__(self):
         load_dotenv(override=True)
         
-        # Channel configuration
-        self.DEFAULT_CHANNEL = 1327357851827572872
-        
         # Environment detection
         self.ENV = os.getenv("ENV")
         if self.ENV == "dev":
@@ -19,14 +16,10 @@ class BotConfig:
             self.TOKEN = os.getenv("DEV_TOKEN")
             self.SUPABASE_URL = os.getenv("DEV_SUPABASE_URL")
             self.SUPABASE_KEY = os.getenv("DEV_SUPABASE_KEY")
-            # TODO: [WARNING] Hardcoded club ID for single club usage
-            self.DEFAULT_CLUB_ID = "club-1"
         else:
             self.TOKEN = os.getenv("TOKEN")
             self.SUPABASE_URL = os.getenv("SUPABASE_URL")
             self.SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-            # TODO: [WARNING] Hardcoded club ID for single club usage
-            self.DEFAULT_CLUB_ID = "0f01ad5e-0665-4f02-8cdd-8d55ecb26ac3"
         
         # API Keys    
         self.KEY_WEATHER = os.getenv("KEY_WEATHER")
