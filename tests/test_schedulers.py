@@ -3,8 +3,6 @@ Tests for scheduled tasks
 """
 import unittest
 from unittest.mock import patch, MagicMock, AsyncMock
-from datetime import datetime
-import pytz
 
 from utils.schedulers import setup_scheduled_tasks
 
@@ -25,11 +23,7 @@ class TestSchedulers(unittest.IsolatedAsyncioTestCase):
     @patch('utils.schedulers.tasks.loop')
     async def test_reminder_at_5pm_pacific_triggers(self, mock_loop):
         """Scheduler is disabled pending per-club notification settings — no messages sent"""
-        sf_timezone = pytz.timezone('US/Pacific')
-        mock_time = datetime(2025, 1, 15, 17, 30, 0, tzinfo=sf_timezone)
-
         mock_channel = AsyncMock()
-        mock_channel.send = AsyncMock()
         self.bot.get_channel.return_value = mock_channel
 
         captured_func = None
@@ -46,26 +40,17 @@ class TestSchedulers(unittest.IsolatedAsyncioTestCase):
         mock_loop.side_effect = capture_loop
         setup_scheduled_tasks(self.bot)
         self.assertIsNotNone(captured_func)
-
-        with patch('utils.schedulers.datetime') as mock_datetime:
-            mock_datetime.now.return_value = mock_time
-            with patch('random.random', return_value=0.1):
-                await captured_func()
+        await captured_func()
 
         # Scheduler is intentionally disabled — no messages should be sent
         mock_channel.send.assert_not_called()
 
     @patch('utils.schedulers.tasks.loop')
     async def test_reminder_wrong_hour_no_send(self, mock_loop):
-        """Test that reminders DON'T trigger at wrong hours"""
-        # Create mock datetime for 3PM Pacific (not 5PM)
-        sf_timezone = pytz.timezone('US/Pacific')
-        mock_time = datetime(2025, 1, 15, 15, 0, 0, tzinfo=sf_timezone)
-
+        """Scheduler is disabled — no messages sent regardless of time"""
         mock_channel = AsyncMock()
         self.bot.get_channel.return_value = mock_channel
 
-        # Capture the scheduled function
         captured_func = None
 
         def capture_loop(*args, **kwargs):
@@ -79,26 +64,16 @@ class TestSchedulers(unittest.IsolatedAsyncioTestCase):
 
         mock_loop.side_effect = capture_loop
         setup_scheduled_tasks(self.bot)
+        await captured_func()
 
-        # Test with wrong time
-        with patch('utils.schedulers.datetime') as mock_datetime:
-            mock_datetime.now.return_value = mock_time
-            with patch('random.random', return_value=0.3):  # Would trigger if time was right
-                await captured_func()
-
-        # Verify NO message was sent
         mock_channel.send.assert_not_called()
 
     @patch('utils.schedulers.tasks.loop')
     async def test_reminder_probability_check(self, mock_loop):
-        """Test that probability check works (40% threshold)"""
-        sf_timezone = pytz.timezone('US/Pacific')
-        mock_time = datetime(2025, 1, 15, 17, 0, 0, tzinfo=sf_timezone)
-
+        """Scheduler is disabled — no messages sent regardless of probability"""
         mock_channel = AsyncMock()
         self.bot.get_channel.return_value = mock_channel
 
-        # Capture the scheduled function
         captured_func = None
 
         def capture_loop(*args, **kwargs):
@@ -112,26 +87,15 @@ class TestSchedulers(unittest.IsolatedAsyncioTestCase):
 
         mock_loop.side_effect = capture_loop
         setup_scheduled_tasks(self.bot)
+        await captured_func()
 
-        # Test with random value ABOVE threshold (should NOT send)
-        with patch('utils.schedulers.datetime') as mock_datetime:
-            mock_datetime.now.return_value = mock_time
-            with patch('random.random', return_value=0.5):  # 0.5 >= 0.4, should NOT send
-                await captured_func()
-
-        # Verify NO message was sent
         mock_channel.send.assert_not_called()
 
     @patch('utils.schedulers.tasks.loop')
     async def test_reminder_no_channel(self, mock_loop):
-        """Test reminder handles missing channel gracefully"""
-        sf_timezone = pytz.timezone('US/Pacific')
-        mock_time = datetime(2025, 1, 15, 17, 0, 0, tzinfo=sf_timezone)
-
-        # Return None for channel
+        """Scheduler is disabled — runs without error even with no channel"""
         self.bot.get_channel.return_value = None
 
-        # Capture the scheduled function
         captured_func = None
 
         def capture_loop(*args, **kwargs):
@@ -145,12 +109,7 @@ class TestSchedulers(unittest.IsolatedAsyncioTestCase):
 
         mock_loop.side_effect = capture_loop
         setup_scheduled_tasks(self.bot)
-
-        # Should not crash even with no channel
-        with patch('utils.schedulers.datetime') as mock_datetime:
-            mock_datetime.now.return_value = mock_time
-            with patch('random.random', return_value=0.3):
-                await captured_func()
+        await captured_func()
 
         # No exception should be raised
 

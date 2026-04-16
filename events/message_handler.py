@@ -1,6 +1,7 @@
 """
 Handlers for message and member events
 """
+import asyncio
 import random
 import discord
 from utils.constants import GREETINGS, REACTIONS, GREETING_MESSAGE_PERCENTAGE, REACT_TO_MENTION_PERCENTAGE, REACT_TO_RANDOM_PERCENTAGE
@@ -43,7 +44,7 @@ def setup_message_handlers(bot):
         print(f"New member joined: {member.name}")
         channel = None
         try:
-            clubs = bot.api.get_server_clubs(str(member.guild.id))
+            clubs = await asyncio.to_thread(bot.api.get_server_clubs, str(member.guild.id))
             if clubs:
                 discord_channel_id = clubs[0].get('discord_channel')
                 if discord_channel_id:
@@ -59,10 +60,3 @@ def setup_message_handlers(bot):
                 footer="Welcome to the Book Club!"
             )
             await channel.send(embed=embed)
-        
-        # Save new member to the database
-        bot.db.save_club({
-            "id": 0,  # Assuming club_id is 0
-            "name": "Quill's Bookclub",
-            "members": [{"id": member.id, "name": member.name, "points": 0, "number_of_books_read": 0}]
-        })

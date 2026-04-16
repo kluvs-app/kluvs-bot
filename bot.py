@@ -150,15 +150,3 @@ class BookClubBot(commands.Bot):
         self.logger.error(f"Error in event {event}")
         traceback_info = traceback.format_exc()
         self.logger.error(f"Traceback:\n{traceback_info}")
-        
-        # For critical errors, you might want to notify yourself
-        if event == "on_ready" or event == "setup_hook":
-            try:
-                for guild in self.guilds:
-                    channel = guild.system_channel
-                    if channel:
-                        await channel.send("⚠️ The bot encountered a critical error. Please check the logs.")
-                        break
-            except:
-                # If this fails, at least we tried
-                pass

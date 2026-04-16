@@ -20,7 +20,6 @@ class TestMessageHandler(unittest.IsolatedAsyncioTestCase):
         self.bot.user.id = 999
         self.bot.config = MagicMock()
         self.bot.api.get_server_clubs.return_value = [{'id': 'club-1', 'discord_channel': '123456'}]
-        self.bot.db = MagicMock()
         self.bot.process_commands = AsyncMock()
         self.bot.get_channel = MagicMock()
 
@@ -206,8 +205,6 @@ class TestMessageHandler(unittest.IsolatedAsyncioTestCase):
             self.assertIn("Welcome", embed.description)
             self.assertIn("@NewUser", embed.description)
 
-            # Verify the database was updated
-            self.bot.db.save_club.assert_called_once()
 
     async def test_on_member_join_no_channel(self):
         """Test member join when channel doesn't exist"""
@@ -224,8 +221,6 @@ class TestMessageHandler(unittest.IsolatedAsyncioTestCase):
         on_member_join = self.handlers['on_member_join']
         await on_member_join(member)
 
-        # Database should still be updated
-        self.bot.db.save_club.assert_called_once()
 
 
 if __name__ == '__main__':
