@@ -3,9 +3,6 @@ Constants used throughout the bot
 """
 from discord import Color
 
-# Default channel ID
-DEFAULT_CHANNEL = 1327357851827572872
-
 # Config variables
 SCHEDULED_MESSAGE_HOUR = 17  # Hour to send sceheduled message
 SCHEDULED_MESSAGE_PERCENTAGE = 0.25  # Chance to send scheduled messages
