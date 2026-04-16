@@ -54,8 +54,6 @@ class TestSchedulers(unittest.IsolatedAsyncioTestCase):
 
         # Scheduler is intentionally disabled — no messages should be sent
         mock_channel.send.assert_not_called()
-        call_args = mock_channel.send.call_args
-        self.assertIn('embed', call_args.kwargs)
 
     @patch('utils.schedulers.tasks.loop')
     async def test_reminder_wrong_hour_no_send(self, mock_loop):
