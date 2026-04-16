@@ -68,8 +68,8 @@ class TestSchedulersComprehensive(unittest.TestCase):
             with patch('random.random', return_value=0.3):  # Under 0.4 threshold
                 await captured_func()
 
-        # Verify message was sent
-        mock_channel.send.assert_called_once()
+        # Scheduler is intentionally disabled — no messages should be sent
+        mock_channel.send.assert_not_called()
 
     @patch('utils.schedulers.tasks.loop')
     async def test_reminder_not_at_5pm(self, mock_loop):
