@@ -239,7 +239,10 @@ requests        # HTTP library
 openai          # OpenAI API client
 coverage        # Code coverage tool
 codecov         # Codecov integration
+kluvs-brain     # AI RAG engine (installed from git)
 ```
+
+**Note on kluvs-brain:** This dependency is installed directly from GitHub. When the remote repository is updated, run `make update-brain` or `make run-fresh` to pull the latest version. The standard `make install` only checks if requirements.txt changed, not if the remote git repo has new commits.
 
 ### External Services
 1. **Discord API** - Bot interface
@@ -279,6 +282,8 @@ URL_EDGE_FUNCTION=<edge_function_base_url>
 3. Create `.env` file with required variables
 4. Run bot: `make run`
 5. Run tests: `make test`
+6. Update kluvs-brain: `make update-brain` (force update from remote repo)
+7. Run with fresh dependencies: `make run-fresh` (updates kluvs-brain first)
 
 **Alternative (without Makefile):**
 1. Clone repository
@@ -392,9 +397,11 @@ Defined in `utils/constants.py`:
 # Using Makefile (recommended)
 make help          # View all available commands
 make install       # Set up venv and install dependencies
+make update-brain  # Force update kluvs-brain from remote repo
 make test          # Run all tests
 make coverage      # Run tests with coverage report
 make run           # Run the bot
+make run-fresh     # Update kluvs-brain and run the bot
 
 # View logs
 tail -f logs/bot.log
@@ -476,6 +483,8 @@ The bot communicates with a Supabase backend via Edge Functions (serverless):
 - **Tests:** `tests/test_*.py`
 - **Run tests:** `make test` or `python tests/run_tests.py`
 - **Coverage:** `make coverage` or `coverage run --source=. tests/run_tests.py && coverage report`
+- **Update dependencies:** `make update-brain` to force update kluvs-brain from remote
+- **Run fresh:** `make run-fresh` to update kluvs-brain and run the bot
 - **Help:** `make help` to see all available Makefile commands
 
 ### Contact

@@ -121,7 +121,14 @@ Quill has a friendly librarian personality with:
    make run
    ```
 
-5. **View all available commands:**
+5. **Update kluvs-brain dependency (when remote repo changes):**
+   ```bash
+   make update-brain
+   # Or run with fresh dependencies:
+   make run-fresh
+   ```
+
+6. **View all available commands:**
    ```bash
    make help
    ```

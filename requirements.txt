@@ -6,3 +6,5 @@ requests
 openai
 coverage
 codecov
+
+kluvs-brain @ git+https://github.com/ivangarzab/kluvs-brain.git
