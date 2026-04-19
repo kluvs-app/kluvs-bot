@@ -49,6 +49,22 @@ def _club_with_admin(author_id, club_id="club-1", session_id="sess-1"):
     }
 
 
+class TestConfirmFlow(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.bot, self.commands = _make_bot()
+
+    async def test_confirm_timeout(self):
+        ctx = _make_ctx()
+        self.bot.wait_for.side_effect = TimeoutError()
+        club = _club_with_admin("111")
+        self.bot.api.find_club_in_channel.return_value = club
+        await self.commands["club_delete"]["func"](ctx)
+        # Should not call API when timeout occurs
+        self.bot.api.delete_club.assert_not_called()
+        # Should have sent 3 messages: prompt, timeout, and cancellation
+        self.assertEqual(ctx.send.call_count, 3)
+
+
 class TestVersionCommand(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.bot, self.commands = _make_bot()
@@ -143,6 +159,21 @@ class TestServerCommands(unittest.IsolatedAsyncioTestCase):
         await self.commands["server_delete"]["func"](ctx)
         self.bot.api.delete_server.assert_not_called()
 
+    async def test_server_delete_api_error(self):
+        ctx = _make_ctx()
+        confirm_msg = MagicMock()
+        confirm_msg.content = "y"
+        self.bot.wait_for.return_value = confirm_msg
+        self.bot.api.delete_server.side_effect = APIError("failed to delete")
+        await self.commands["server_delete"]["func"](ctx)
+        self.assertIn("❌", ctx.send.call_args_list[-1].args[0])
+
+    async def test_server_update_api_error(self):
+        ctx = _make_ctx()
+        self.bot.api.update_server.side_effect = APIError("update failed")
+        await self.commands["server_update"]["func"](ctx, name="New Name")
+        self.assertIn("❌", ctx.send.call_args.args[0])
+
 
 class TestClubAdminCheck(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
@@ -173,6 +204,27 @@ class TestClubAdminCheck(unittest.IsolatedAsyncioTestCase):
             "members": [{"discord_id": "111", "role": "member"}],
         }
         await self.commands["club_create"]["func"](ctx, name="New Club")
+        ctx.send.assert_called_once_with("❌ You need to be a club admin or owner to use this command.")
+
+    async def test_club_update_allowed_for_owner(self):
+        ctx = _make_ctx(author_id="111")
+        self.bot.api.find_club_in_channel.return_value = {
+            "id": "club-1",
+            "name": "Test Club",
+            "members": [{"discord_id": "111", "role": "owner"}],
+        }
+        self.bot.api.update_club.return_value = {"success": True}
+        await self.commands["club_update"]["func"](ctx, args="--name Updated")
+        self.bot.api.update_club.assert_called_once()
+
+    async def test_club_update_denied_when_no_members_in_club(self):
+        ctx = _make_ctx(author_id="111")
+        self.bot.api.find_club_in_channel.return_value = {
+            "id": "club-1",
+            "name": "Test Club",
+            "members": [],
+        }
+        await self.commands["club_update"]["func"](ctx, args="--name X")
         ctx.send.assert_called_once_with("❌ You need to be a club admin or owner to use this command.")
 
 
@@ -236,6 +288,46 @@ class TestClubCommands(unittest.IsolatedAsyncioTestCase):
         await self.commands["club_delete"]["func"](ctx)
         self.bot.api.delete_club.assert_not_called()
 
+    async def test_club_delete_no_club_in_channel(self):
+        ctx = _make_ctx(author_id="111")
+        self.bot.api.find_club_in_channel.side_effect = [self.club, None]
+        await self.commands["club_delete"]["func"](ctx)
+        ctx.send.assert_called_with("❌ No book club found in this channel.")
+
+    async def test_club_create_no_club_in_channel(self):
+        ctx = _make_ctx(author_id="111")
+        self.bot.api.find_club_in_channel.return_value = self.club
+        self.bot.api.create_club.side_effect = APIError("failed")
+        await self.commands["club_create"]["func"](ctx, name="New Club")
+        self.assertIn("❌", ctx.send.call_args.args[0])
+
+    async def test_club_update_both_flags(self):
+        ctx = _make_ctx(author_id="111")
+        self.bot.api.find_club_in_channel.return_value = self.club
+        self.bot.api.update_club.return_value = {"success": True}
+        await self.commands["club_update"]["func"](ctx, args="--name NewName --channel 555")
+        self.bot.api.update_club.assert_called_once()
+        call_args = self.bot.api.update_club.call_args[0][1]
+        self.assertIn("name", call_args)
+        self.assertIn("discord_channel", call_args)
+
+    async def test_club_update_api_error(self):
+        ctx = _make_ctx(author_id="111")
+        self.bot.api.find_club_in_channel.return_value = self.club
+        self.bot.api.update_club.side_effect = APIError("update failed")
+        await self.commands["club_update"]["func"](ctx, args="--name X")
+        self.assertIn("❌", ctx.send.call_args.args[0])
+
+    async def test_club_delete_api_error(self):
+        ctx = _make_ctx(author_id="111")
+        self.bot.api.find_club_in_channel.return_value = self.club
+        confirm_msg = MagicMock()
+        confirm_msg.content = "y"
+        self.bot.wait_for.return_value = confirm_msg
+        self.bot.api.delete_club.side_effect = APIError("delete failed")
+        await self.commands["club_delete"]["func"](ctx)
+        self.assertIn("❌", ctx.send.call_args_list[-1].args[0])
+
 
 class TestMemberCommands(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
@@ -298,6 +390,38 @@ class TestMemberCommands(unittest.IsolatedAsyncioTestCase):
         await self.commands["member_role"]["func"](ctx, 42, "superadmin")
         ctx.send.assert_called_with("❌ Role must be `admin` or `member`.")
         self.bot.api.update_member.assert_not_called()
+
+    async def test_member_add_no_club_in_channel(self):
+        ctx = _make_ctx(author_id="111")
+        self.bot.api.find_club_in_channel.side_effect = [self.club, None]
+        new_member = MagicMock()
+        new_member.id = "222"
+        new_member.display_name = "Alice"
+        await self.commands["member_add"]["func"](ctx, new_member)
+        ctx.send.assert_called_with("❌ No book club found in this channel.")
+
+    async def test_member_role_no_club_in_channel(self):
+        ctx = _make_ctx(author_id="111")
+        self.bot.api.find_club_in_channel.side_effect = [self.club, None]
+        await self.commands["member_role"]["func"](ctx, 42, "admin")
+        ctx.send.assert_called_with("❌ No book club found in this channel.")
+
+    async def test_member_role_api_error(self):
+        ctx = _make_ctx(author_id="111")
+        self.bot.api.find_club_in_channel.return_value = self.club
+        self.bot.api.update_member.side_effect = APIError("update failed")
+        await self.commands["member_role"]["func"](ctx, 42, "admin")
+        self.assertIn("❌", ctx.send.call_args.args[0])
+
+    async def test_member_remove_api_error(self):
+        ctx = _make_ctx(author_id="111")
+        self.bot.api.find_club_in_channel.return_value = self.club
+        confirm_msg = MagicMock()
+        confirm_msg.content = "y"
+        self.bot.wait_for.return_value = confirm_msg
+        self.bot.api.delete_member.side_effect = APIError("delete failed")
+        await self.commands["member_remove"]["func"](ctx, 42)
+        self.assertIn("❌", ctx.send.call_args_list[-1].args[0])
 
 
 class TestSessionCommands(unittest.IsolatedAsyncioTestCase):
@@ -370,6 +494,45 @@ class TestSessionCommands(unittest.IsolatedAsyncioTestCase):
         self.bot.wait_for.return_value = confirm_msg
         await self.commands["session_delete"]["func"](ctx)
         self.bot.api.delete_session.assert_not_called()
+
+    async def test_session_create_no_club_in_channel(self):
+        ctx = _make_ctx(author_id="111")
+        self.bot.api.find_club_in_channel.side_effect = [self.club, None]
+        await self.commands["session_create"]["func"](ctx, "Dune", author="Frank Herbert")
+        ctx.send.assert_called_with("❌ No book club found in this channel.")
+
+    async def test_session_delete_no_club_in_channel(self):
+        ctx = _make_ctx(author_id="111")
+        self.bot.api.find_club_in_channel.side_effect = [self.club, None]
+        await self.commands["session_delete"]["func"](ctx)
+        ctx.send.assert_called_with("❌ No active session found in this channel.")
+
+    async def test_session_update_both_flags(self):
+        ctx = _make_ctx(author_id="111")
+        self.bot.api.find_club_in_channel.return_value = self.club
+        self.bot.api.update_session.return_value = {"success": True}
+        await self.commands["session_update"]["func"](ctx, args='--due-date 2026-06-01 --book "New Book|New Author"')
+        self.bot.api.update_session.assert_called_once()
+        call_args = self.bot.api.update_session.call_args[0][1]
+        self.assertIn("due_date", call_args)
+        self.assertIn("book", call_args)
+
+    async def test_session_update_api_error(self):
+        ctx = _make_ctx(author_id="111")
+        self.bot.api.find_club_in_channel.return_value = self.club
+        self.bot.api.update_session.side_effect = APIError("update failed")
+        await self.commands["session_update"]["func"](ctx, args="--due-date 2026-06-01")
+        self.assertIn("❌", ctx.send.call_args.args[0])
+
+    async def test_session_delete_api_error(self):
+        ctx = _make_ctx(author_id="111")
+        self.bot.api.find_club_in_channel.return_value = self.club
+        confirm_msg = MagicMock()
+        confirm_msg.content = "y"
+        self.bot.wait_for.return_value = confirm_msg
+        self.bot.api.delete_session.side_effect = APIError("delete failed")
+        await self.commands["session_delete"]["func"](ctx)
+        self.assertIn("❌", ctx.send.call_args_list[-1].args[0])
 
 
 if __name__ == "__main__":
