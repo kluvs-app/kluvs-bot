@@ -439,6 +439,34 @@ class BookClubAPI:
         except requests.exceptions.RequestException as e:
             self._handle_request_error(e, "member", str(member_id))
     
+    def get_member_by_discord_id(self, discord_id: str) -> Optional[Dict]:
+        """
+        Get a member by their Discord user ID.
+        Returns None if no member is found instead of raising an exception.
+
+        Args:
+            discord_id: The Discord user snowflake ID
+
+        Returns:
+            Dict containing member details including clubs, or None if not found
+
+        Raises:
+            AuthenticationError: If there's an authentication issue
+            APIError: For other API errors (but not ResourceNotFoundError)
+        """
+        url = f"{self.functions_url}/member"
+        params = {"discord_id": discord_id}
+
+        try:
+            response = requests.get(url, headers=self.headers, params=params)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            try:
+                self._handle_request_error(e, "member", discord_id)
+            except ResourceNotFoundError:
+                return None
+
     def create_member(self, member_data: Dict) -> Dict:
         """
         Create a new member.

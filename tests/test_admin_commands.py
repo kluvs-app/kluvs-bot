@@ -344,9 +344,10 @@ class TestMemberCommands(unittest.IsolatedAsyncioTestCase):
         self.bot, self.commands = _make_bot()
         self.club = _club_with_admin("111")
 
-    async def test_member_add_success(self):
+    async def test_member_add_new_member(self):
         ctx = _make_ctx(author_id="111")
         self.bot.api.find_club_in_channel.return_value = self.club
+        self.bot.api.get_member_by_discord_id.return_value = None
         self.bot.api.create_member.return_value = {"success": True}
         new_member = MagicMock()
         new_member.id = "222"
@@ -358,9 +359,44 @@ class TestMemberCommands(unittest.IsolatedAsyncioTestCase):
             "clubs": ["club-1"],
         })
 
+    async def test_member_add_existing_member_joins_new_club(self):
+        ctx = _make_ctx(author_id="111")
+        self.bot.api.find_club_in_channel.return_value = self.club
+        self.bot.api.get_member_by_discord_id.return_value = {
+            "id": 99,
+            "name": "Alice",
+            "discord_id": "222",
+            "clubs": [{"id": "other-club"}],
+        }
+        self.bot.api.update_member.return_value = {"success": True}
+        new_member = MagicMock()
+        new_member.id = "222"
+        new_member.display_name = "Alice"
+        await self.commands["member_add"]["func"](ctx, new_member)
+        self.bot.api.create_member.assert_not_called()
+        self.bot.api.update_member.assert_called_once_with(99, {"clubs": ["other-club", "club-1"]})
+
+    async def test_member_add_already_in_club(self):
+        ctx = _make_ctx(author_id="111")
+        self.bot.api.find_club_in_channel.return_value = self.club
+        self.bot.api.get_member_by_discord_id.return_value = {
+            "id": 99,
+            "name": "Alice",
+            "discord_id": "222",
+            "clubs": [{"id": "club-1"}],
+        }
+        new_member = MagicMock()
+        new_member.id = "222"
+        new_member.display_name = "Alice"
+        await self.commands["member_add"]["func"](ctx, new_member)
+        self.bot.api.create_member.assert_not_called()
+        self.bot.api.update_member.assert_not_called()
+        self.assertIn("already a member", ctx.send.call_args.args[0])
+
     async def test_member_add_api_error(self):
         ctx = _make_ctx(author_id="111")
         self.bot.api.find_club_in_channel.return_value = self.club
+        self.bot.api.get_member_by_discord_id.return_value = None
         self.bot.api.create_member.side_effect = APIError("failed")
         new_member = MagicMock()
         new_member.id = "222"

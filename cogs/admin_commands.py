@@ -267,11 +267,19 @@ def setup_admin_commands(bot):
             await ctx.send("❌ No book club found in this channel.")
             return
         try:
-            bot.api.create_member({
-                "name": member.display_name,
-                "discord_id": str(member.id),
-                "clubs": [club_data["id"]]
-            })
+            existing = bot.api.get_member_by_discord_id(str(member.id))
+            if existing:
+                current_club_ids = [c["id"] for c in existing.get("clubs", [])]
+                if club_data["id"] in current_club_ids:
+                    await ctx.send(f"**{member.display_name}** is already a member of this club.")
+                    return
+                bot.api.update_member(existing["id"], {"clubs": current_club_ids + [club_data["id"]]})
+            else:
+                bot.api.create_member({
+                    "name": member.display_name,
+                    "discord_id": str(member.id),
+                    "clubs": [club_data["id"]]
+                })
             embed = create_embed(
                 title="✅ Member Added",
                 description=f"**{member.display_name}** has been added to the club.",
