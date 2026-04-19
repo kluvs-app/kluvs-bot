@@ -1,7 +1,7 @@
 # Kluvs - Discord bot
 
-[![Tests](https://github.com/ivangarzab/kluvs-bot/workflows/Run%20Tests/badge.svg)](https://github.com/ivangarzab/kluvs-bot/actions)
-[![codecov](https://codecov.io/gh/ivangarzab/kluvs-bot/branch/main/graph/badge.svg)](https://codecov.io/gh/ivangarzab/kluvs-bot)
+[![Tests](https://github.com/kluvs-api/kluvs-bot/workflows/Run%20Tests/badge.svg)](https://github.com/kluvs-api/kluvs-bot/actions)
+[![codecov](https://codecov.io/gh/kluvs-api/kluvs-bot/branch/main/graph/badge.svg)](https://codecov.io/gh/kluvs-api/kluvs-bot)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Discord.py](https://img.shields.io/badge/discord.py-latest-blue.svg)](https://github.com/Rapptz/discord.py)
 
@@ -88,7 +88,7 @@ Quill has a friendly librarian personality with:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/ivangarzab/quill-bot.git
+   git clone https://github.com/kluvs-api/kluvs-bot.git
    cd quill-bot
    ```
 
@@ -133,7 +133,7 @@ Quill has a friendly librarian personality with:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/ivangarzab/quill-bot.git
+   git clone https://github.com/kluvs-api/kluvs-bot.git
    cd quill-bot
    ```
 
@@ -305,7 +305,7 @@ This project is currently unlicensed. See [TERMS.md](TERMS.md) for usage terms.
 
 **Maintainer:** Ivan Garza
 **Email:** ivangb6@gmail.com
-**Repository:** https://github.com/ivangarzab/quill-bot.git
+**Repository:** https://github.com/kluvs-api/kluvs-bot.git
 
 ## Acknowledgments
 
