@@ -64,6 +64,24 @@ class TestConfirmFlow(unittest.IsolatedAsyncioTestCase):
         # Should have sent 3 messages: prompt, timeout, and cancellation
         self.assertEqual(ctx.send.call_count, 3)
 
+    async def test_confirm_check_predicate_invoked(self):
+        ctx = _make_ctx()
+
+        async def fake_wait_for(_event, *, timeout=30.0, check=None):
+            msg = MagicMock()
+            msg.author = ctx.author
+            msg.channel = ctx.channel
+            msg.content = "y"
+            check(msg)
+            return msg
+
+        self.bot.wait_for.side_effect = fake_wait_for
+        club = _club_with_admin("111")
+        self.bot.api.find_club_in_channel.return_value = club
+        self.bot.api.delete_club.return_value = {"success": True}
+        await self.commands["club_delete"]["func"](ctx)
+        self.bot.api.delete_club.assert_called_once()
+
 
 class TestVersionCommand(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
@@ -73,8 +91,8 @@ class TestVersionCommand(unittest.IsolatedAsyncioTestCase):
         ctx = _make_ctx()
         setup_content = 'setup(name="quill-bot", version="0.0.1")'
         with patch("builtins.open", mock_open(read_data=setup_content)):
-            with patch("os.path.join", return_value="setup.py"):
-                with patch("os.path.dirname", return_value="/mock"):
+            with patch("cogs.admin_commands.os.path.join", return_value="setup.py"):
+                with patch("cogs.admin_commands.os.path.dirname", return_value="/mock"):
                     await self.commands["version"]["func"](ctx)
         ctx.send.assert_called_once()
         self.assertIn("embed", ctx.send.call_args.kwargs)
@@ -371,6 +389,21 @@ class TestClubCommands(unittest.IsolatedAsyncioTestCase):
         await self.commands["club_delete"]["func"](ctx)
         self.assertIn("❌", ctx.send.call_args_list[-1].args[0])
 
+    async def test_club_create_empty_name(self):
+        ctx = _make_ctx(author_id="111")
+        await self.commands["club_create"]["func"](ctx, args="--channel 999")
+        ctx.send.assert_called_once_with(
+            "❌ Provide a club name: `!club_create <name> [--channel <id>]`"
+        )
+        self.bot.api.create_club.assert_not_called()
+
+    async def test_club_delete_no_permission(self):
+        ctx = _make_ctx(author_id="999", is_owner=False)
+        self.bot.api.find_club_in_channel.return_value = _club_with_admin("111")
+        await self.commands["club_delete"]["func"](ctx)
+        ctx.send.assert_called_once_with("❌ You need to be a club admin or owner to use this command.")
+        self.bot.api.delete_club.assert_not_called()
+
 
 class TestMemberCommands(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
@@ -502,6 +535,30 @@ class TestMemberCommands(unittest.IsolatedAsyncioTestCase):
         await self.commands["member_remove"]["func"](ctx, 42)
         self.assertIn("❌", ctx.send.call_args_list[-1].args[0])
 
+    async def test_member_add_no_permission(self):
+        ctx = _make_ctx(author_id="999", is_owner=False)
+        self.bot.api.find_club_in_channel.return_value = _club_with_admin("111")
+        new_member = MagicMock()
+        new_member.id = "999"
+        new_member.display_name = "Intruder"
+        await self.commands["member_add"]["func"](ctx, new_member)
+        ctx.send.assert_called_once_with("❌ You need to be a club admin or owner to use this command.")
+        self.bot.api.create_member.assert_not_called()
+
+    async def test_member_remove_no_permission(self):
+        ctx = _make_ctx(author_id="999", is_owner=False)
+        self.bot.api.find_club_in_channel.return_value = _club_with_admin("111")
+        await self.commands["member_remove"]["func"](ctx, 42)
+        ctx.send.assert_called_once_with("❌ You need to be a club admin or owner to use this command.")
+        self.bot.api.delete_member.assert_not_called()
+
+    async def test_member_role_no_permission(self):
+        ctx = _make_ctx(author_id="999", is_owner=False)
+        self.bot.api.find_club_in_channel.return_value = _club_with_admin("111")
+        await self.commands["member_role"]["func"](ctx, 42, "admin")
+        ctx.send.assert_called_once_with("❌ You need to be a club admin or owner to use this command.")
+        self.bot.api.update_member.assert_not_called()
+
 
 class TestSessionCommands(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
@@ -612,6 +669,27 @@ class TestSessionCommands(unittest.IsolatedAsyncioTestCase):
         self.bot.api.delete_session.side_effect = APIError("delete failed")
         await self.commands["session_delete"]["func"](ctx)
         self.assertIn("❌", ctx.send.call_args_list[-1].args[0])
+
+    async def test_session_create_no_permission(self):
+        ctx = _make_ctx(author_id="999", is_owner=False)
+        self.bot.api.find_club_in_channel.return_value = _club_with_admin("111")
+        await self.commands["session_create"]["func"](ctx, "Dune", author="Frank Herbert")
+        ctx.send.assert_called_once_with("❌ You need to be a club admin or owner to use this command.")
+        self.bot.api.create_session.assert_not_called()
+
+    async def test_session_update_no_permission(self):
+        ctx = _make_ctx(author_id="999", is_owner=False)
+        self.bot.api.find_club_in_channel.return_value = _club_with_admin("111")
+        await self.commands["session_update"]["func"](ctx, args="--due-date 2026-06-01")
+        ctx.send.assert_called_once_with("❌ You need to be a club admin or owner to use this command.")
+        self.bot.api.update_session.assert_not_called()
+
+    async def test_session_delete_no_permission(self):
+        ctx = _make_ctx(author_id="999", is_owner=False)
+        self.bot.api.find_club_in_channel.return_value = _club_with_admin("111")
+        await self.commands["session_delete"]["func"](ctx)
+        ctx.send.assert_called_once_with("❌ You need to be a club admin or owner to use this command.")
+        self.bot.api.delete_session.assert_not_called()
 
 
 if __name__ == "__main__":
