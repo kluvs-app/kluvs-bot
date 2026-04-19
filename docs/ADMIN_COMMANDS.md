@@ -5,13 +5,30 @@ All admin commands are **prefix commands** (use `!` prefix, not `/`).
 ## Permission Model
 
 - **Server commands**: Guild owner only
-- **Club/Member/Session commands**: Guild owner OR club admin/owner
+- **Club/Member/Session commands**: Guild owner OR club admin/owner in the target club
 
-Guild owners have unrestricted access to all commands in their server. This allows bootstrapping: register server → create first club → add members → promote an admin.
+Guild owners have unrestricted access to all commands in their server. This allows bootstrapping:
+register server → create first club → add members → promote an admin.
+
+## Using an Admin Channel
+
+All club/member/session commands accept an optional `--channel <id>` flag so they can be
+issued from a dedicated `#admin` channel without needing to navigate to the club channel.
+
+```
+# From #admin channel, targeting #book-club (id: 123456789)
+!member_add @alice --channel 123456789
+!session_create "Dune" Frank Herbert --channel 123456789
+!club_delete --channel 123456789
+```
+
+Omitting `--channel` targets the current channel as usual.
+
+---
 
 ## Server Commands
 
-Commands for managing server registration and settings.
+These are server-wide operations and do **not** support `--channel`.
 
 ### `!server_register`
 
@@ -20,13 +37,6 @@ Registers the Discord server with the bot.
 **Permission**: Guild owner only  
 **Usage**: `!server_register`
 
-**Example**:
-```
-!server_register
-```
-
-**Response**: Confirms server registration
-
 ### `!server_update <name>`
 
 Updates the server's registered name.
@@ -34,231 +44,179 @@ Updates the server's registered name.
 **Permission**: Guild owner only  
 **Usage**: `!server_update <new_name>`
 
-**Example**:
-```
-!server_update "My Book Club Server"
-```
-
-**Response**: Confirms name update
+**Example**: `!server_update "My Book Club Server"`
 
 ### `!server_delete`
 
 Deletes the server registration and ALL associated data (clubs, members, sessions).
 
 **Permission**: Guild owner only  
-**Usage**: `!server_delete`
+**Usage**: `!server_delete`  
+**Confirmation**: Requires `y`
 
-**Confirmation**: Requires typing `y` to confirm; any other response cancels
-
-**Example**:
-```
-!server_delete
-⚠️ This will delete **all server data** including clubs, members, and sessions...
-> y
-✅ Server registration and all associated data have been removed.
-```
+---
 
 ## Club Commands
 
-Commands for managing book clubs within the server.
+### `!club_create <name> [--channel <channel_id>]`
 
-### `!club_create <name>`
+Creates a new book club. The caller is **automatically assigned as club owner**.
 
-Creates a new book club in the current channel.
+**Permission**: Guild owner OR club admin in the target channel  
+**Usage**: `!club_create <name> [--channel <channel_id>]`
 
-**Permission**: Guild owner OR club admin in this channel  
-**Usage**: `!club_create <club_name>`
-
-**Example**:
+**Examples**:
 ```
 !club_create "Classic Literature"
+!club_create "Sci-Fi Club" --channel 123456789
 ```
 
-**Response**: Confirms club creation in the channel
+### `!club_update [--name <name>] [--new-channel <channel_id>] [--channel <channel_id>]`
 
-### `!club_update [--name <name>] [--channel <channel_id>]`
+Updates club details. Use `--new-channel` to move the club to a different Discord channel.
+Use `--channel` to target a specific club from another channel (e.g. `#admin`).
 
-Updates club details. At least one flag required.
-
-**Permission**: Guild owner OR club admin in this channel  
-**Usage**: `!club_update --name "New Name"` or `!club_update --channel 123456789` or both
+**Permission**: Guild owner OR club admin in the target channel  
+**At least one of** `--name` or `--new-channel` required
 
 **Examples**:
 ```
 !club_update --name "Sci-Fi Readers"
-!club_update --channel 987654321
-!club_update --name "Updated Club" --channel 987654321
+!club_update --new-channel 987654321
+!club_update --name "Updated" --new-channel 987654321 --channel 123456789
 ```
 
-**Response**: Confirms club update
+### `!club_delete [--channel <channel_id>]`
 
-### `!club_delete`
+Deletes the book club and all its data.
 
-Deletes the book club in the current channel and all associated sessions.
+**Permission**: Guild owner OR club admin in the target channel  
+**Usage**: `!club_delete [--channel <channel_id>]`  
+**Confirmation**: Requires `y`
 
-**Permission**: Guild owner OR club admin in this channel  
-**Usage**: `!club_delete`
+**Example**: `!club_delete --channel 123456789`
 
-**Confirmation**: Requires typing `y` to confirm
-
-**Example**:
-```
-!club_delete
-⚠️ This will delete **Test Club** and all its data...
-> y
-✅ **Test Club** has been deleted.
-```
+---
 
 ## Member Commands
 
-Commands for managing club members.
+### `!member_add @User [--channel <channel_id>]`
 
-### `!member_add @User`
+Adds a Discord user to a club. If the user already has a member record (from another club),
+they are linked to this club without creating a duplicate.
 
-Adds a Discord user to the current channel's book club.
+**Permission**: Guild owner OR club admin in the target channel  
+**Usage**: `!member_add @Username [--channel <channel_id>]`
 
-**Permission**: Guild owner OR club admin in this channel  
-**Usage**: `!member_add @Username`
-
-**Example**:
+**Examples**:
 ```
 !member_add @alice
+!member_add @alice --channel 123456789
 ```
 
-**Response**: Confirms member addition and displays their name
+### `!member_remove <member_id> [--channel <channel_id>]`
 
-### `!member_remove <member_id>`
+Removes a member by their ID.
 
-Removes a member from the club.
+**Permission**: Guild owner OR club admin in the target channel  
+**Usage**: `!member_remove <member_id> [--channel <channel_id>]`  
+**Confirmation**: Requires `y`
 
-**Permission**: Guild owner OR club admin in this channel  
-**Usage**: `!member_remove <member_id>`
+**Example**: `!member_remove 42 --channel 123456789`
 
-**Confirmation**: Requires typing `y` to confirm
-
-**Example**:
-```
-!member_remove 42
-⚠️ Remove member `42` from the club...
-> y
-✅ Member `42` has been removed.
-```
-
-### `!member_role <member_id> <role>`
+### `!member_role <member_id> <role> [--channel <channel_id>]`
 
 Updates a member's role in the club.
 
-**Permission**: Guild owner OR club admin in this channel  
-**Usage**: `!member_role <member_id> <admin|member>`
+**Permission**: Guild owner OR club admin in the target channel  
+**Usage**: `!member_role <member_id> <admin|member> [--channel <channel_id>]`
 
 **Roles**:
-- `admin` - Can manage club/members/sessions
-- `member` - Can view club content only
+- `admin` — Can manage club/members/sessions
+- `member` — Standard membership, read-only access to club commands
 
 **Examples**:
 ```
 !member_role 42 admin
-!member_role 42 member
+!member_role 42 member --channel 123456789
 ```
 
-**Response**: Confirms role update
-
-**Error**: Invalid role (must be `admin` or `member`)
+---
 
 ## Session Commands
 
-Commands for managing reading sessions.
+### `!session_create "<book_title>" <author> [--channel <channel_id>]`
 
-### `!session_create <book_title> <author>`
+Creates a new reading session for a club.
 
-Creates a new reading session for the club.
+**Permission**: Guild owner OR club admin in the target channel  
+**Usage**: `!session_create "<title>" <author> [--channel <channel_id>]`
 
-**Permission**: Guild owner OR club admin in this channel  
-**Usage**: `!session_create "<title>" <author>`
-
-**Example**:
+**Examples**:
 ```
 !session_create "The Great Gatsby" F. Scott Fitzgerald
+!session_create "Dune" Frank Herbert --channel 123456789
 ```
 
-**Response**: Confirms session creation with book title
+### `!session_update [--due-date YYYY-MM-DD] [--book "<title>|<author>"] [--channel <channel_id>]`
 
-### `!session_update [--due-date YYYY-MM-DD] [--book "<title>|<author>"]`
+Updates the active session. At least one of `--due-date` or `--book` required.
 
-Updates the active session. At least one flag required.
-
-**Permission**: Guild owner OR club admin in this channel  
-**Usage**: `!session_update --due-date YYYY-MM-DD` or `!session_update --book "<title>|<author>"` or both
+**Permission**: Guild owner OR club admin in the target channel  
+**Note**: Book format uses a pipe separator: `"<title>|<author>"`
 
 **Examples**:
 ```
 !session_update --due-date 2026-06-15
 !session_update --book "Dune|Frank Herbert"
-!session_update --due-date 2026-06-15 --book "Dune|Frank Herbert"
+!session_update --due-date 2026-06-15 --book "Dune|Frank Herbert" --channel 123456789
 ```
 
-**Response**: Confirms session update
+### `!session_delete [--channel <channel_id>]`
 
-**Note**: Book format is `"<title>|<author>"` with pipe separator
+Deletes the active reading session.
 
-### `!session_delete`
+**Permission**: Guild owner OR club admin in the target channel  
+**Usage**: `!session_delete [--channel <channel_id>]`  
+**Confirmation**: Requires `y`
 
-Deletes the active reading session for the club.
+**Example**: `!session_delete --channel 123456789`
 
-**Permission**: Guild owner OR club admin in this channel  
-**Usage**: `!session_delete`
+---
 
-**Confirmation**: Requires typing `y` to confirm
-
-**Example**:
-```
-!session_delete
-⚠️ This will permanently delete the active reading session...
-> y
-✅ The active reading session has been deleted.
-```
-
-## Error Messages
-
-### Common Errors
+## Error Reference
 
 | Error | Cause | Solution |
 |-------|-------|----------|
-| `❌ Only the server owner can use this command` | Non-owner trying server command | Ask guild owner to run |
-| `❌ You need to be a club admin or owner to use this command` | Non-admin/owner trying club op | Ask club admin or guild owner to run |
-| `❌ No book club found in this channel` | Channel has no linked club | Create club first with `!club_create` |
-| `❌ No active session found in this channel` | No reading session in progress | Create session with `!session_create` |
-| `❌ Role must be 'admin' or 'member'` | Invalid role in `!member_role` | Use `admin` or `member` only |
-| `⏰ Confirmation timed out` | Didn't confirm `y/n` within 30 seconds | Re-run the command |
+| `❌ Only the server owner can use this command` | Non-owner running a server command | Ask the guild owner |
+| `❌ You need to be a club admin or owner` | Insufficient permissions | Ask a club admin or the guild owner |
+| `❌ No book club found in that channel` | No club linked to the target channel | Create one with `!club_create` |
+| `❌ No active session found in that channel` | No reading session in progress | Create one with `!session_create` |
+| `❌ Role must be 'admin' or 'member'` | Invalid role in `!member_role` | Use `admin` or `member` |
+| `⏰ Confirmation timed out` | No response within 30 seconds | Re-run the command |
+
+---
 
 ## Bootstrap Workflow
 
-Fresh server setup:
+Fresh server setup from an `#admin` channel (channel ID: `123456`):
 
 ```
-1. Guild Owner: !server_register
+1. !server_register
    ✅ Server registered
 
-2. Guild Owner: !club_create "My Book Club"
-   ✅ Club created in #channel
+2. !club_create "My Book Club" --channel 123456
+   ✅ Club created — caller assigned as owner
 
-3. Guild Owner: !member_add @alice
+3. !member_add @alice --channel 123456
    ✅ Alice added
 
-4. Guild Owner: !member_role <alice_id> admin
+4. !member_role <alice_id> admin --channel 123456
    ✅ Alice is now admin
 
-5. Alice (club admin): !session_create "Dune" Frank Herbert
+5. !session_create "Dune" Frank Herbert --channel 123456
    ✅ Session created
 
-6. Alice: !session_update --due-date 2026-06-15
+6. !session_update --due-date 2026-06-15 --channel 123456
    ✅ Due date set
 ```
-
-## Notes
-
-- All destructive commands (`_delete`) require `y/n` confirmation
-- Confirmation timeout is **30 seconds**
-- Guild owner can bypass club admin requirement for all club/member/session operations
-- Each club is tied to a Discord channel
-- Members are identified by Discord ID, not mention (for robustness)
