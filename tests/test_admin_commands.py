@@ -175,12 +175,22 @@ class TestServerCommands(unittest.IsolatedAsyncioTestCase):
         self.assertIn("❌", ctx.send.call_args.args[0])
 
 
-class TestClubAdminCheck(unittest.IsolatedAsyncioTestCase):
+class TestCanManageClubs(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.bot, self.commands = _make_bot()
 
-    async def test_club_create_denied_when_not_admin(self):
-        ctx = _make_ctx(author_id="999")
+    async def test_guild_owner_can_create_club_without_being_admin(self):
+        """Guild owner should be able to create a club even if not a club admin."""
+        ctx = _make_ctx(author_id="111", is_owner=True)
+        # No club exists yet
+        self.bot.api.find_club_in_channel.return_value = None
+        self.bot.api.create_club.return_value = {"success": True}
+        await self.commands["club_create"]["func"](ctx, name="New Club")
+        # Should succeed because user is guild owner
+        self.bot.api.create_club.assert_called_once()
+
+    async def test_non_owner_denied_when_not_admin(self):
+        ctx = _make_ctx(author_id="999", is_owner=False)
         # Club has a different member as admin
         self.bot.api.find_club_in_channel.return_value = {
             "id": "club-1",
@@ -191,13 +201,13 @@ class TestClubAdminCheck(unittest.IsolatedAsyncioTestCase):
         ctx.send.assert_called_once_with("❌ You need to be a club admin or owner to use this command.")
 
     async def test_club_create_denied_when_no_club(self):
-        ctx = _make_ctx(author_id="111")
+        ctx = _make_ctx(author_id="111", is_owner=False)
         self.bot.api.find_club_in_channel.return_value = None
         await self.commands["club_create"]["func"](ctx, name="New Club")
         ctx.send.assert_called_once_with("❌ You need to be a club admin or owner to use this command.")
 
     async def test_club_create_denied_when_role_is_member(self):
-        ctx = _make_ctx(author_id="111")
+        ctx = _make_ctx(author_id="111", is_owner=False)
         self.bot.api.find_club_in_channel.return_value = {
             "id": "club-1",
             "name": "Test Club",
@@ -218,7 +228,7 @@ class TestClubAdminCheck(unittest.IsolatedAsyncioTestCase):
         self.bot.api.update_club.assert_called_once()
 
     async def test_club_update_denied_when_no_members_in_club(self):
-        ctx = _make_ctx(author_id="111")
+        ctx = _make_ctx(author_id="111", is_owner=False)
         self.bot.api.find_club_in_channel.return_value = {
             "id": "club-1",
             "name": "Test Club",
@@ -263,11 +273,11 @@ class TestClubCommands(unittest.IsolatedAsyncioTestCase):
         self.bot.api.update_club.assert_not_called()
 
     async def test_club_update_no_club_in_channel(self):
-        ctx = _make_ctx(author_id="111")
-        # First call (in _check_club_admin) returns club, second (in command) returns None
-        self.bot.api.find_club_in_channel.side_effect = [self.club, None]
+        ctx = _make_ctx(author_id="111", is_owner=True)
+        # Guild owner, but no club in channel
+        self.bot.api.find_club_in_channel.return_value = None
         await self.commands["club_update"]["func"](ctx, args="--name X")
-        ctx.send.assert_called_with("❌ No book club found in this channel.")
+        ctx.send.assert_called_once_with("❌ No book club found in this channel.")
 
     async def test_club_delete_confirmed(self):
         ctx = _make_ctx(author_id="111")
@@ -289,10 +299,10 @@ class TestClubCommands(unittest.IsolatedAsyncioTestCase):
         self.bot.api.delete_club.assert_not_called()
 
     async def test_club_delete_no_club_in_channel(self):
-        ctx = _make_ctx(author_id="111")
-        self.bot.api.find_club_in_channel.side_effect = [self.club, None]
+        ctx = _make_ctx(author_id="111", is_owner=True)
+        self.bot.api.find_club_in_channel.return_value = None
         await self.commands["club_delete"]["func"](ctx)
-        ctx.send.assert_called_with("❌ No book club found in this channel.")
+        ctx.send.assert_called_once_with("❌ No book club found in this channel.")
 
     async def test_club_create_no_club_in_channel(self):
         ctx = _make_ctx(author_id="111")
@@ -392,19 +402,19 @@ class TestMemberCommands(unittest.IsolatedAsyncioTestCase):
         self.bot.api.update_member.assert_not_called()
 
     async def test_member_add_no_club_in_channel(self):
-        ctx = _make_ctx(author_id="111")
-        self.bot.api.find_club_in_channel.side_effect = [self.club, None]
+        ctx = _make_ctx(author_id="111", is_owner=True)
+        self.bot.api.find_club_in_channel.return_value = None
         new_member = MagicMock()
         new_member.id = "222"
         new_member.display_name = "Alice"
         await self.commands["member_add"]["func"](ctx, new_member)
-        ctx.send.assert_called_with("❌ No book club found in this channel.")
+        ctx.send.assert_called_once_with("❌ No book club found in this channel.")
 
     async def test_member_role_no_club_in_channel(self):
-        ctx = _make_ctx(author_id="111")
-        self.bot.api.find_club_in_channel.side_effect = [self.club, None]
+        ctx = _make_ctx(author_id="111", is_owner=True)
+        self.bot.api.find_club_in_channel.return_value = None
         await self.commands["member_role"]["func"](ctx, 42, "admin")
-        ctx.send.assert_called_with("❌ No book club found in this channel.")
+        ctx.send.assert_called_once_with("❌ No book club found in this channel.")
 
     async def test_member_role_api_error(self):
         ctx = _make_ctx(author_id="111")
@@ -496,16 +506,16 @@ class TestSessionCommands(unittest.IsolatedAsyncioTestCase):
         self.bot.api.delete_session.assert_not_called()
 
     async def test_session_create_no_club_in_channel(self):
-        ctx = _make_ctx(author_id="111")
-        self.bot.api.find_club_in_channel.side_effect = [self.club, None]
+        ctx = _make_ctx(author_id="111", is_owner=True)
+        self.bot.api.find_club_in_channel.return_value = None
         await self.commands["session_create"]["func"](ctx, "Dune", author="Frank Herbert")
-        ctx.send.assert_called_with("❌ No book club found in this channel.")
+        ctx.send.assert_called_once_with("❌ No book club found in this channel.")
 
     async def test_session_delete_no_club_in_channel(self):
-        ctx = _make_ctx(author_id="111")
-        self.bot.api.find_club_in_channel.side_effect = [self.club, None]
+        ctx = _make_ctx(author_id="111", is_owner=True)
+        self.bot.api.find_club_in_channel.return_value = None
         await self.commands["session_delete"]["func"](ctx)
-        ctx.send.assert_called_with("❌ No active session found in this channel.")
+        ctx.send.assert_called_once_with("❌ No active session found in this channel.")
 
     async def test_session_update_both_flags(self):
         ctx = _make_ctx(author_id="111")

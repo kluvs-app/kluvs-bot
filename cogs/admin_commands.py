@@ -22,8 +22,10 @@ def setup_admin_commands(bot):
         """Returns True if the command author is the Discord guild owner."""
         return ctx.author == ctx.guild.owner
 
-    async def _check_club_admin(ctx):
-        """Returns True if the author has admin or owner role in the club for this channel."""
+    async def _can_manage_clubs(ctx):
+        """Returns True if user is guild owner OR club admin in the current channel's club."""
+        if _check_guild_owner(ctx):
+            return True
         guild_id = str(ctx.guild.id)
         channel_id = str(ctx.channel.id)
         club_data = bot.api.find_club_in_channel(channel_id, guild_id)
@@ -163,7 +165,7 @@ def setup_admin_commands(bot):
         Creates a new book club linked to the current channel.
         Usage: !club_create <name>
         """
-        if not await _check_club_admin(ctx):
+        if not await _can_manage_clubs(ctx):
             await ctx.send("❌ You need to be a club admin or owner to use this command.")
             return
         try:
@@ -186,7 +188,7 @@ def setup_admin_commands(bot):
         Updates club details. Provide at least one flag.
         Usage: !club_update [--name <name>] [--channel <channel_id>]
         """
-        if not await _check_club_admin(ctx):
+        if not await _can_manage_clubs(ctx):
             await ctx.send("❌ You need to be a club admin or owner to use this command.")
             return
         guild_id = str(ctx.guild.id)
@@ -221,7 +223,7 @@ def setup_admin_commands(bot):
         Deletes the book club linked to the current channel.
         Usage: !club_delete
         """
-        if not await _check_club_admin(ctx):
+        if not await _can_manage_clubs(ctx):
             await ctx.send("❌ You need to be a club admin or owner to use this command.")
             return
         guild_id = str(ctx.guild.id)
@@ -256,7 +258,7 @@ def setup_admin_commands(bot):
         Adds a mentioned Discord user to the book club in this channel.
         Usage: !member_add @User
         """
-        if not await _check_club_admin(ctx):
+        if not await _can_manage_clubs(ctx):
             await ctx.send("❌ You need to be a club admin or owner to use this command.")
             return
         guild_id = str(ctx.guild.id)
@@ -285,7 +287,7 @@ def setup_admin_commands(bot):
         Removes a member by their ID.
         Usage: !member_remove <member_id>
         """
-        if not await _check_club_admin(ctx):
+        if not await _can_manage_clubs(ctx):
             await ctx.send("❌ You need to be a club admin or owner to use this command.")
             return
         confirmed = await _confirm(
@@ -313,7 +315,7 @@ def setup_admin_commands(bot):
         Sets a member's role to admin or member.
         Usage: !member_role <member_id> <admin|member>
         """
-        if not await _check_club_admin(ctx):
+        if not await _can_manage_clubs(ctx):
             await ctx.send("❌ You need to be a club admin or owner to use this command.")
             return
         if role not in ("admin", "member"):
@@ -343,7 +345,7 @@ def setup_admin_commands(bot):
         Creates a reading session for the club in this channel.
         Usage: !session_create "<book title>" <author>
         """
-        if not await _check_club_admin(ctx):
+        if not await _can_manage_clubs(ctx):
             await ctx.send("❌ You need to be a club admin or owner to use this command.")
             return
         guild_id = str(ctx.guild.id)
@@ -371,7 +373,7 @@ def setup_admin_commands(bot):
         Updates the active session. Provide at least one flag.
         Usage: !session_update [--due-date YYYY-MM-DD] [--book "<title>|<author>"]
         """
-        if not await _check_club_admin(ctx):
+        if not await _can_manage_clubs(ctx):
             await ctx.send("❌ You need to be a club admin or owner to use this command.")
             return
         guild_id = str(ctx.guild.id)
@@ -412,7 +414,7 @@ def setup_admin_commands(bot):
         Deletes the active session for the club in this channel.
         Usage: !session_delete
         """
-        if not await _check_club_admin(ctx):
+        if not await _can_manage_clubs(ctx):
             await ctx.send("❌ You need to be a club admin or owner to use this command.")
             return
         guild_id = str(ctx.guild.id)
