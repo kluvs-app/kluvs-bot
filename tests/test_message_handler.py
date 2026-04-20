@@ -221,6 +221,61 @@ class TestMessageHandler(unittest.IsolatedAsyncioTestCase):
         on_member_join = self.handlers['on_member_join']
         await on_member_join(member)
 
+    async def test_on_guild_join_sends_welcome_to_system_channel(self):
+        """Welcome embed is posted to guild.system_channel when available."""
+        guild = MagicMock()
+        guild.name = "Test Guild"
+        guild.id = 123456
+        system_channel = AsyncMock()
+        guild.system_channel = system_channel
+
+        on_guild_join = self.handlers['on_guild_join']
+        await on_guild_join(guild)
+
+        system_channel.send.assert_called_once()
+        _, kwargs = system_channel.send.call_args
+        self.assertIn('embed', kwargs)
+        embed = kwargs['embed']
+        self.assertIn("Quill", embed.title)
+        self.assertIn("!setup", embed.description)
+
+    async def test_on_guild_join_falls_back_to_first_writable_channel(self):
+        """Falls back to first writable text channel when system_channel is None."""
+        guild = MagicMock()
+        guild.name = "Test Guild"
+        guild.id = 123456
+        guild.system_channel = None
+
+        fallback = AsyncMock()
+        perms = MagicMock()
+        perms.send_messages = True
+        fallback.permissions_for.return_value = perms
+        guild.text_channels = [fallback]
+
+        on_guild_join = self.handlers['on_guild_join']
+        await on_guild_join(guild)
+
+        fallback.send.assert_called_once()
+        _, kwargs = fallback.send.call_args
+        self.assertIn('embed', kwargs)
+
+    async def test_on_guild_join_no_writable_channel(self):
+        """Does not crash when there are no writable channels."""
+        guild = MagicMock()
+        guild.name = "Test Guild"
+        guild.id = 123456
+        guild.system_channel = None
+
+        perms = MagicMock()
+        perms.send_messages = False
+        blocked = MagicMock()
+        blocked.permissions_for.return_value = perms
+        guild.text_channels = [blocked]
+
+        on_guild_join = self.handlers['on_guild_join']
+        await on_guild_join(guild)
+        # No crash; no send called
+        blocked.send.assert_not_called()
 
 
 if __name__ == '__main__':

@@ -694,5 +694,103 @@ class TestSessionCommands(unittest.IsolatedAsyncioTestCase):
         self.bot.api.delete_session.assert_not_called()
 
 
+class TestSetupCommand(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.bot, self.commands = _make_bot()
+
+    def _club_name_msg(self, ctx, name="My Book Club"):
+        msg = MagicMock()
+        msg.author = ctx.author
+        msg.channel = ctx.channel
+        msg.content = name
+        return msg
+
+    async def test_setup_denied_for_non_owner(self):
+        ctx = _make_ctx(is_owner=False)
+        await self.commands["setup"]["func"](ctx)
+        ctx.send.assert_called_once_with("❌ Only the server owner can run `!setup`.")
+        self.bot.api.register_server.assert_not_called()
+
+    async def test_setup_happy_path_new_member(self):
+        ctx = _make_ctx()
+        self.bot.api.register_server.return_value = {"success": True}
+        self.bot.api.get_member_by_discord_id.return_value = None
+        self.bot.api.create_member.return_value = {"member": {"id": "m-1", "name": "Owner"}}
+        self.bot.api.create_club.return_value = {"id": "c-1"}
+        self.bot.wait_for.return_value = self._club_name_msg(ctx)
+
+        await self.commands["setup"]["func"](ctx)
+
+        self.bot.api.register_server.assert_called_once_with("888", "Test Server")
+        self.bot.api.create_club.assert_called_once()
+        call_args = self.bot.api.create_club.call_args[0][0]
+        self.assertEqual(call_args["name"], "My Book Club")
+        self.assertEqual(call_args["discord_channel"], "999")
+        # Confirmation embed sent as last message
+        last_call = ctx.send.call_args
+        self.assertIn("embed", last_call.kwargs)
+
+    async def test_setup_happy_path_existing_member(self):
+        ctx = _make_ctx()
+        self.bot.api.register_server.return_value = {"success": True}
+        self.bot.api.get_member_by_discord_id.return_value = {"id": "m-42", "name": "Existing"}
+        self.bot.api.create_club.return_value = {"id": "c-2"}
+        self.bot.wait_for.return_value = self._club_name_msg(ctx, "Readers Circle")
+
+        await self.commands["setup"]["func"](ctx)
+
+        self.bot.api.create_member.assert_not_called()
+        call_args = self.bot.api.create_club.call_args[0][0]
+        self.assertEqual(call_args["name"], "Readers Circle")
+        self.assertEqual(call_args["members"], [{"id": "m-42", "name": "Existing"}])
+
+    async def test_setup_already_registered_server_continues(self):
+        ctx = _make_ctx()
+        self.bot.api.register_server.side_effect = APIError("already registered")
+        self.bot.api.get_member_by_discord_id.return_value = {"id": "m-1", "name": "Owner"}
+        self.bot.api.create_club.return_value = {"id": "c-3"}
+        self.bot.wait_for.return_value = self._club_name_msg(ctx)
+
+        await self.commands["setup"]["func"](ctx)
+
+        # Should inform user and continue to club creation
+        messages = [call.args[0] if call.args else "" for call in ctx.send.call_args_list]
+        self.assertTrue(any("already registered" in m for m in messages))
+        self.bot.api.create_club.assert_called_once()
+
+    async def test_setup_register_server_api_error_stops(self):
+        ctx = _make_ctx()
+        self.bot.api.register_server.side_effect = APIError("connection failed")
+
+        await self.commands["setup"]["func"](ctx)
+
+        self.bot.api.create_club.assert_not_called()
+        last_msg = ctx.send.call_args.args[0]
+        self.assertIn("❌", last_msg)
+
+    async def test_setup_timeout_waiting_for_club_name(self):
+        ctx = _make_ctx()
+        self.bot.api.register_server.return_value = {"success": True}
+        self.bot.wait_for.side_effect = TimeoutError()
+
+        await self.commands["setup"]["func"](ctx)
+
+        self.bot.api.create_club.assert_not_called()
+        last_msg = ctx.send.call_args.args[0]
+        self.assertIn("⏰", last_msg)
+
+    async def test_setup_create_club_api_error(self):
+        ctx = _make_ctx()
+        self.bot.api.register_server.return_value = {"success": True}
+        self.bot.api.get_member_by_discord_id.return_value = {"id": "m-1", "name": "Owner"}
+        self.bot.api.create_club.side_effect = APIError("club creation failed")
+        self.bot.wait_for.return_value = self._club_name_msg(ctx)
+
+        await self.commands["setup"]["func"](ctx)
+
+        last_msg = ctx.send.call_args.args[0]
+        self.assertIn("❌", last_msg)
+
+
 if __name__ == "__main__":
     unittest.main()
