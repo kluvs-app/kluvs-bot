@@ -404,7 +404,7 @@ Coverage reports are automatically uploaded to [codecov.io](https://codecov.io) 
 
 **Coverage badge:**
 ```markdown
-[![codecov](https://codecov.io/gh/ivangarzab/quill-bot/branch/main/graph/badge.svg)](https://codecov.io/gh/ivangarzab/quill-bot)
+[![codecov](https://codecov.io/gh/kluvs-api/quill-bot/branch/main/graph/badge.svg)](https://codecov.io/gh/kluvs-api/quill-bot)
 ```
 
 ## Testing Strategy

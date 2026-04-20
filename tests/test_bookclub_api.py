@@ -356,6 +356,43 @@ class TestBookClubAPI(unittest.TestCase):
             params={"id": 1}
         )
 
+    @patch('requests.get')
+    def test_get_member_by_discord_id_found(self, mock_get):
+        """Test get_member_by_discord_id returns member data when found."""
+        mock_response = Mock()
+        mock_response.json.return_value = {
+            "id": 1,
+            "name": "Alice",
+            "discord_id": "123456789",
+            "clubs": [{"id": "club-1", "name": "Test Club"}]
+        }
+        mock_response.raise_for_status = Mock()
+        mock_get.return_value = mock_response
+
+        result = self.api.get_member_by_discord_id("123456789")
+
+        self.assertEqual(result["name"], "Alice")
+        self.assertEqual(result["discord_id"], "123456789")
+        mock_get.assert_called_once_with(
+            "http://test-url.supabase.co/functions/v1/member",
+            headers=self.api.headers,
+            params={"discord_id": "123456789"}
+        )
+
+    @patch('requests.get')
+    def test_get_member_by_discord_id_not_found(self, mock_get):
+        """Test get_member_by_discord_id returns None on 404."""
+        from requests.exceptions import HTTPError
+        mock_response = Mock()
+        mock_response.status_code = 404
+        http_error = HTTPError(response=mock_response)
+        mock_response.raise_for_status.side_effect = http_error
+        mock_get.return_value = mock_response
+
+        result = self.api.get_member_by_discord_id("nonexistent")
+
+        self.assertIsNone(result)
+
     # Session endpoint tests (unchanged - sessions inherit server context from clubs)
     @patch('requests.get')
     def test_get_session(self, mock_get):

@@ -8,4 +8,9 @@
     ],
     "python.testing.pytestEnabled": false,
     "python.testing.unittestEnabled": true,
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.egg-info": true,
+        "**/.pytest_cache": true
+    }
 }
