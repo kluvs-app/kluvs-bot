@@ -91,6 +91,70 @@ def setup_admin_commands(bot):
             )
             await ctx.send(embed=embed)
 
+    # ── Admin Help (guild owner or club admin+) ──────────────────────────────
+
+    @bot.command(name="help", help="Show admin command reference")
+    async def admin_help(ctx: commands.Context):
+        """
+        Display admin command reference for guild owners and club admins.
+        Usage: !help
+        """
+        if not await _can_manage_clubs(ctx):
+            await ctx.send("❌ You need to be a guild owner or club admin to use this command.")
+            return
+
+        embed = create_embed(
+            title="📖 Admin Commands Reference",
+            description="Commands for managing your book club",
+            color_key="info",
+            fields=[
+                {
+                    "name": "🔧 Setup & Server",
+                    "value": (
+                        "`!setup` — First-run wizard: register server and create a club\n"
+                        "`!server_register` — Register this Discord server\n"
+                        "`!server_update <name>` — Update server name\n"
+                        "`!server_delete` — Delete server and all data"
+                    ),
+                    "inline": False
+                },
+                {
+                    "name": "📚 Club Management",
+                    "value": (
+                        "`!club_create <name>` — Create a new book club\n"
+                        "`!club_update [--name <name>] [--new-channel <id>]` — Update club details\n"
+                        "`!club_delete` — Delete the club in this channel"
+                    ),
+                    "inline": False
+                },
+                {
+                    "name": "👥 Member Management",
+                    "value": (
+                        "`!member_add @User` — Add a member to the club\n"
+                        "`!member_remove <id>` — Remove a member\n"
+                        "`!member_role <id> <admin|member>` — Set member role"
+                    ),
+                    "inline": False
+                },
+                {
+                    "name": "📖 Session Management",
+                    "value": (
+                        "`!session_create \"<title>\" <author>` — Create a reading session\n"
+                        "`!session_update [--due-date YYYY-MM-DD] [--book \"<title>|<author>\"]` — Update session\n"
+                        "`!session_delete` — Delete the active session"
+                    ),
+                    "inline": False
+                },
+                {
+                    "name": "ℹ️ Other",
+                    "value": "`!version` — Show bot version",
+                    "inline": False
+                }
+            ],
+            footer="Use a command name for more details (e.g., !club_create --help)"
+        )
+        await ctx.send(embed=embed)
+
     # ── Setup wizard (guild owner only) ──────────────────────────────────────
 
     @bot.command(name="setup", help="First-run wizard: register server and create a book club")
