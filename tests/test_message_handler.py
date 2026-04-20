@@ -249,7 +249,7 @@ class TestMessageHandler(unittest.IsolatedAsyncioTestCase):
         fallback = AsyncMock()
         perms = MagicMock()
         perms.send_messages = True
-        fallback.permissions_for.return_value = perms
+        fallback.permissions_for = MagicMock(return_value=perms)
         guild.text_channels = [fallback]
 
         on_guild_join = self.handlers['on_guild_join']

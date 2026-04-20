@@ -44,10 +44,10 @@ def setup_message_handlers(bot):
         print(f"Joined new guild: {guild.name} ({guild.id})")
         channel = guild.system_channel
         if channel is None:
-            channel = next(
-                (c for c in guild.text_channels if c.permissions_for(guild.me).send_messages),
-                None
-            )
+            for c in guild.text_channels:
+                if c.permissions_for(guild.me).send_messages:
+                    channel = c
+                    break
         if channel is None:
             print(f"[WARN] No writable channel found in guild {guild.id}")
             return
