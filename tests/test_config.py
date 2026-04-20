@@ -24,29 +24,27 @@ class TestBotConfig(unittest.TestCase):
     @patch('config.load_dotenv')  # Prevents .env file loading
     @patch('builtins.print')      # Captures print statements
     @patch.dict(os.environ, {     # Sets mock environment variables
-        "ENV": "dev", 
+        "ENV": "dev",
         "DEV_TOKEN": "dev_test_token",
         "TOKEN": "prod_test_token",
-        "KEY_WEATHER": "test_weather_key", 
         "KEY_OPEN_AI": "test_openai_key",
         "DEV_SUPABASE_URL": "dev_test_url",
         "DEV_SUPABASE_KEY": "dev_test_key",
-        "SUPABASE_URL": "prod_test_url", 
+        "SUPABASE_URL": "prod_test_url",
         "SUPABASE_KEY": "prod_test_key"
     }, clear=True)
     def test_init_development_mode(self, mock_print, mock_load_dotenv):
         """Test complete development mode configuration"""
         # Prevent .env file loading
         mock_load_dotenv.return_value = True
-        
+
         config = BotConfig()
-        
+
         # Verify dev mode settings
         self.assertEqual(config.ENV, "dev")
         self.assertEqual(config.TOKEN, "dev_test_token")
         self.assertEqual(config.SUPABASE_URL, "dev_test_url")
         self.assertEqual(config.SUPABASE_KEY, "dev_test_key")
-        self.assertEqual(config.KEY_WEATHER, "test_weather_key")
         self.assertEqual(config.KEY_OPENAI, "test_openai_key")
 
         # Verify debug output was printed
@@ -57,22 +55,20 @@ class TestBotConfig(unittest.TestCase):
     @patch.dict(os.environ, {
         "ENV": "dev",
         "DEV_TOKEN": "dev_test_token",
-        "KEY_WEATHER": "test_weather_key",
         "KEY_OPEN_AI": "test_openai_key"
     }, clear=True)
-    def test_init_development_mode(self, mock_print, mock_load_dotenv):
-        """Test configuration initialization in development mode"""
+    def test_init_development_mode_duplicate(self, mock_print, mock_load_dotenv):
+        """Test configuration initialization in development mode (second variant)"""
         # Prevent .env file loading
         mock_load_dotenv.return_value = True
-        
+
         config = BotConfig()
-        
+
         # Verify dev mode settings
         self.assertEqual(config.ENV, "dev")
         self.assertEqual(config.TOKEN, "dev_test_token")
-        self.assertEqual(config.KEY_WEATHER, "test_weather_key")
         self.assertEqual(config.KEY_OPENAI, "test_openai_key")
-        
+
         # Verify debug output
         mock_print.assert_any_call("[DEBUG] ~~~~~~~~~~~~ Running in development mode ~~~~~~~~~~~~")
 
@@ -108,24 +104,25 @@ class TestBotConfig(unittest.TestCase):
         #         BotConfig()
         #     self.assertIn("TOKEN environment variable is not set", str(context.exception))
 
+    @patch('config.load_dotenv')
     @patch('builtins.print')
     @patch.dict(os.environ, {
         "TOKEN": "test_token",
-        "KEY_WEATHER": "test_weather_key",
+        "SUPABASE_URL": "test_url",
+        "SUPABASE_KEY": "test_key",
         "KEY_OPEN_AI": "test_openai_key"
-    })
-    def test_debug_print(self, mock_print):
+    }, clear=True)
+    def test_debug_print(self, mock_print, mock_load_dotenv):
         """Test debug information printing"""
         config = BotConfig()
-        
+
         # Verify debug printing was called
-        # Note: Adjusted call count to 4 to match actual implementation
-        self.assertEqual(mock_print.call_count, 4)
-        
+        # Should have 2 prints from _debug_print (TOKEN and KEY_OPENAI)
+        self.assertEqual(mock_print.call_count, 2)
+
         # Check the debug output contains the right information
         debug_output = [call.args[0] for call in mock_print.call_args_list if isinstance(call.args[0], str)]
         self.assertTrue(any("TOKEN: SET" in arg for arg in debug_output))
-        self.assertTrue(any("KEY_WEATHER: SET" in arg for arg in debug_output))
         self.assertTrue(any("KEY_OPENAI: SET" in arg for arg in debug_output))
 
 if __name__ == '__main__':
