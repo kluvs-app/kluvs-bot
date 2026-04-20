@@ -56,22 +56,7 @@ def setup_general_commands(bot):
                   "• `/discussions` - Show the session's discussion details",
             inline=False
         )
-        
-        embed.add_field(
-            name="🎲 Fun Commands",
-            value="• `/rolldice` - Roll a six-sided die\n"
-                  "• `/flipcoin` - Flip a coin\n"
-                  "• `/choose <options>` - Choose from given options",
-            inline=False
-        )
-        
-        embed.add_field(
-            name="🌤 Utility Commands",
-            value="• `/weather <city>` - Get the city weather\n"
-                  "• `/funfact` - Get a random book-related fact",
-            inline=False
-        )
-        
+
         embed.set_footer(text=f"*Use / to access all commands!*")
         await interaction.response.send_message(embed=embed)
         print("Sent usage command response.")

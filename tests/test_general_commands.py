@@ -92,10 +92,8 @@ class TestGeneralCommands(unittest.IsolatedAsyncioTestCase):
         # Check that the embed has fields for different command categories
         call_args_list = mock_embed.add_field.call_args_list
         field_names = [call[1]['name'] for call in call_args_list]
-        
+
         self.assertIn("📖 Reading Commands", field_names)
-        self.assertIn("🎲 Fun Commands", field_names)
-        self.assertIn("🌤 Utility Commands", field_names)
         
         # Verify the interaction response was sent
         interaction.response.send_message.assert_called_once_with(embed=mock_embed)

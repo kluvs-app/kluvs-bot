@@ -1,319 +1,130 @@
-# Kluvs - Discord bot
+# 📚 Kluvs - Discord Book Club Bot
 
 [![Tests](https://github.com/kluvs-app/kluvs-bot/workflows/Run%20Tests/badge.svg)](https://github.com/kluvs-app/kluvs-bot/actions)
 [![codecov](https://codecov.io/gh/kluvs-app/kluvs-bot/branch/main/graph/badge.svg)](https://codecov.io/gh/kluvs-app/kluvs-bot)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Discord.py](https://img.shields.io/badge/discord.py-latest-blue.svg)](https://github.com/Rapptz/discord.py)
 
-A Discord bot designed to be the ultimate companion for book clubs! Quill manages reading sessions, tracks member progress, schedules discussions, and provides AI-powered book summaries and interactive features.
-
-![Quill the Librarian](/assets/avatar-v1.png)
+A focused Discord bot for managing book clubs with session tracking, member management, and AI-powered features.
 
 ## Features
 
-### Book Club Management
-- **Multi-Server Support** - Manage book clubs across different Discord servers
-- **Session Tracking** - Keep track of current books, due dates, and reading progress
-- **Member Management** - Track member participation and points
-- **Discussion Scheduling** - Organize and schedule discussion topics
-- **Shame List** - Light-hearted tracking of members who don't finish books
+- **Multi-Server Support** — Manage book clubs across different Discord servers
+- **Session Tracking** — Track current books, due dates, and reading progress
+- **Member Management** — Track participation and member details
+- **Discussion Scheduling** — Organize discussion topics for sessions
+- **AI Features** — Book summaries and chat with OpenAI GPT-3.5-turbo
+- **Daily Reminders** — Automated reading reminders (5 PM Pacific, 40% chance)
+- **Personality** — Librarian-themed responses and book-focused interactions
 
-### AI-Powered Features
-- **Book Summaries** - Get AI-generated summaries of your current book using GPT-3.5-turbo
-- **Interactive Chat** - Chat with Quill using the `/robot` command or natural language
-- **Smart Responses** - Context-aware error messages and helpful guidance
+## Commands
 
-### Utility Commands
-- **Weather Integration** - Check current weather conditions for any city
-- **Fun Facts** - Learn random book-related trivia
-- **Interactive Games** - Dice rolling, coin flipping, and random choice selection
+### Reading Commands
+- `/help` — Getting started guide
+- `/usage` — View all available commands
+- `/session` — Show all session details
+- `/book` — Show current book details
+- `/duedate` — Show session due date
+- `/discussions` — View scheduled discussion topics
+- `/book_summary` — AI-generated book summary
 
-### Personality
-Quill has a friendly librarian personality with:
-- Book-themed responses and reactions
-- Random greetings and interactions (10% chance)
-- Daily reading reminders at 5:00 PM Pacific Time
-- Multilingual welcome messages for new members
+### Admin Commands
+*Requires guild owner or club admin role*
+
+**Setup & Server (guild owner only):**
+- `!setup` — First-run wizard: register server and create a club
+- `!server_register` — Register this Discord server
+- `!server_update <name>` — Update server name
+- `!server_delete` — Delete server and all data
+
+**Club Management:**
+- `!club_create <name>` — Create a new book club
+- `!club_update [--name <name>] [--new-channel <id>]` — Update club details
+- `!club_delete` — Delete the club
+
+**Member Management:**
+- `!member_add @User` — Add a member to the club
+- `!member_remove <id>` — Remove a member
+- `!member_role <id> <admin|member>` — Set member role
+
+**Session Management:**
+- `!session_create "<title>" <author>` — Create a reading session
+- `!session_update [--due-date YYYY-MM-DD] [--book "<title>|<author>"]` — Update session
+- `!session_delete` — Delete the active session
+
+**Other:**
+- `!admin_help` — Show detailed admin command reference
+- `!version` — Display bot version
 
 ## Quick Start
 
-### Installation
+### Invite to Server
+[Click to invite Quill](https://discord.com/oauth2/authorize?client_id=1327910712454152275)
 
-1. **Invite Quill to your Discord server:**
+### Local Development
 
-   [Click here to invite Quill](https://discord.com/oauth2/authorize?client_id=1327910712454152275)
+**Prerequisites:**
+- Python 3.9+
+- Discord Bot Token
+- Supabase Account
+- OpenAI API Key
 
-2. **Set up your book club:**
-
-   Use `/help` to get started with setting up your first book club session.
-
-### Available Commands
-
-#### General Commands
-- `/help` - Get started guide and orientation
-- `/usage` - View complete list of available commands
-
-#### Session Management
-- `/book` - Display current book information
-- `/duedate` - Show when the current session is due
-- `/session` - View full session details (book, dates, progress)
-- `/discussions` - See scheduled discussion topics
-- `/book_summary` - Get an AI-generated summary of the current book
-
-#### Fun & Interactive
-- `/rolldice` - Roll a six-sided die
-- `/flipcoin` - Flip a coin (heads or tails)
-- `/choose <options>` - Randomly choose from comma-separated options
-
-#### Utilities
-- `/weather <city>` - Get current weather for a city
-- `/funfact` - Learn a random book-related fun fact
-- `/robot <prompt>` - Chat with Quill's AI (also works with "robot, <message>")
-
-#### Admin
-- `!version` - Display bot version (prefix command)
-
-## Development
-
-### Prerequisites
-- Python 3.9 or higher
-- Discord Developer Account
-- Supabase Account (for database)
-- OpenAI API Key (for AI features)
-- Weatherbit.io API Key (for weather features)
-
-### Local Setup
-
-#### Quick Start (Using Makefile - Recommended)
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/kluvs-app/kluvs-bot.git
-   cd kluvs-bot
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   make install
-   ```
-   This creates a virtual environment and installs all dependencies automatically.
-
-3. **Set up environment variables:**
-
-   Create a `.env` file in the project root:
-   ```bash
-   # Development Mode
-   ENV=dev
-   DEV_TOKEN=your_discord_bot_token_here
-
-   # API Keys
-   KEY_SUPABASE=your_supabase_anon_key
-   KEY_OPEN_AI=your_openai_api_key
-   KEY_WEATHER=your_weatherbit_api_key
-
-   # Supabase Configuration
-   URL_SUPABASE=your_supabase_project_url
-   URL_EDGE_FUNCTION=your_edge_function_base_url
-   ```
-
-4. **Run the bot:**
-   ```bash
-   make run
-   ```
-
-5. **View all available commands:**
-   ```bash
-   make help
-   ```
-
-#### Manual Setup (Alternative)
-
-<details>
-<summary>Click to expand manual setup instructions</summary>
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/kluvs-app/kluvs-bot.git
-   cd kluvs-bot
-   ```
-
-2. **Create and activate virtual environment:**
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   ```
-
-3. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Set up environment variables** (same as above)
-
-5. **Run the bot:**
-   ```bash
-   python main.py
-   ```
-
-</details>
-
-### Running Tests
-
-#### Using Makefile (Recommended)
-
+**Setup:**
 ```bash
-# Run all tests
-make test
-
-# Run tests with coverage report
-make coverage
-
-# Generate HTML coverage report
-make coverage-html
-# Then open htmlcov/index.html in your browser
-
-# View all available commands
-make help
+git clone https://github.com/kluvs-app/kluvs-bot.git
+cd kluvs-bot
+make install
 ```
 
-#### Manual Testing (Alternative)
+**Create `.env` file:**
+```
+ENV=dev
+DEV_TOKEN=your_discord_bot_token
+KEY_SUPABASE=your_supabase_anon_key
+KEY_OPEN_AI=your_openai_api_key
+DEV_SUPABASE_URL=your_supabase_url
+URL_EDGE_FUNCTION=your_edge_function_base_url
+```
 
-<details>
-<summary>Click to expand manual testing commands</summary>
-
-Run all tests:
+**Run:**
 ```bash
-python tests/run_tests.py
+make run
 ```
 
-Run tests with coverage:
+**Tests:**
 ```bash
-coverage run --source=. tests/run_tests.py
-coverage report
-```
-
-Generate HTML coverage report:
-```bash
-coverage html
-# Open htmlcov/index.html in your browser
-```
-
-</details>
-
-### Project Structure
-
-```
-kluvs-bot/
-├── api/                    # Supabase Edge Functions API client
-├── cogs/                   # Discord command modules
-│   ├── admin_commands.py
-│   ├── fun_commands.py
-│   ├── general_commands.py
-│   ├── session_commands.py
-│   └── utility_commands.py
-├── events/                # Discord event handlers
-├── services/              # External service integrations
-│   ├── openai_service.py
-│   └── weather_service.py
-├── tests/                 # Unit test suite (18 test files, 131 tests)
-├── utils/                 # Shared utilities
-├── bot.py                 # Main bot class
-├── main.py                # Application entry point
-└── config.py              # Configuration management
+make test          # Run all tests
+make coverage      # Run with coverage report
 ```
 
 ## Architecture
 
-### Technology Stack
-- **Discord.py** - Discord bot framework with slash commands
-- **Supabase** - PostgreSQL database with Edge Functions
-- **OpenAI GPT-3.5-turbo** - AI-powered features
-- **Weatherbit.io** - Weather data provider
-- **Python 3.9+** - Core runtime
+- **discord.py** — Discord bot framework
+- **Supabase** — PostgreSQL database with Edge Functions
+- **OpenAI** — AI summaries and chat
+- **Python 3.9+** — Core runtime
 
-### Design Patterns
-- **Command Cog Pattern** - Commands organized by functional area
-- **Service Layer Pattern** - External services abstracted into dedicated classes
-- **API Client Pattern** - Comprehensive REST client for backend communication
-- **Multi-Server Architecture** - Guild-aware operations for multiple Discord servers
-
-### Database Schema
-- **Servers** - Discord guild registrations
-- **Clubs** - Book club definitions linked to channels
-- **Members** - User profiles shared across clubs
-- **Sessions** - Active reading sessions
-- **Books** - Book information
-- **Discussions** - Scheduled discussion topics
-- **ShameList** - Members who didn't finish books
+**Design patterns:**
+- Command cogs organized by functional area
+- Service layer for external API integrations
+- API client with custom exception handling
+- Multi-server guild-aware operations
 
 ## Testing
 
-The project maintains comprehensive test coverage with:
-- **18 test files** covering all major components
-- **130 unit tests** with properly async mock-based testing
-- **~62% code coverage** (tracked via codecov)
-- **100% coverage** on message handlers, schedulers, weather service, embeds, and constants
-- **Automated CI/CD** via GitHub Actions
-- **Mock-based testing** for Discord and external API interactions
+Run tests with:
+```bash
+make test
+```
 
-See [CLAUDE.md](CLAUDE.md) for detailed testing documentation.
+View coverage:
+```bash
+make coverage
+```
 
-## Contributing
+## Development
 
-Contributions are welcome! Please:
-1. Fork the repository
-2. Create a feature branch
-3. Write tests for new features
-4. Ensure all tests pass
-5. Submit a pull request to `main`
-
-All pull requests trigger automated testing and coverage reporting.
-
-## CI/CD
-
-The project uses GitHub Actions for continuous integration:
-- **Automated Testing** on all PRs and pushes to main
-- **Code Coverage** reporting via codecov
-- **Python 3.9** test environment
-- **Environment Variables** managed via GitHub Secrets
-
-## Documentation
-
-- **[CLAUDE.md](CLAUDE.md)** - Comprehensive guide for AI assistants and developers
-- **[SECURITY.md](SECURITY.md)** - Privacy policy and security measures
-- **[TERMS.md](TERMS.md)** - Terms of use and disclaimers
-
-## Roadmap
-
-### Current Focus
-- Increasing test coverage to 70%+
-- Migrating hardcoded club IDs to dynamic lookup
-- Fixing database schema mismatches
-
-### Future Enhancements
-- Command cooldowns and rate limiting
-- Type hints throughout codebase
-- Automated code formatting and linting
-- Integration tests for Discord interactions
-- Additional AI features (book recommendations, reading analytics)
-
-## License
-
-This project is currently unlicensed. See [TERMS.md](TERMS.md) for usage terms.
-
-## Contact
-
-**Maintainer:** Ivan Garza
-**Email:** ivangb6@gmail.com
-**Repository:** https://github.com/kluvs-app/kluvs-bot.git
-
-## Acknowledgments
-
-- Built with [Discord.py](https://github.com/Rapptz/discord.py)
-- Database powered by [Supabase](https://supabase.com)
-- AI features powered by [OpenAI](https://openai.com)
-- Weather data from [Weatherbit.io](https://www.weatherbit.io)
-
----
-
-Made with books and code by Ivan Garza
+- Follow existing code patterns
+- Add tests for new features
+- Run `make test` before submitting PRs
+- Update CLAUDE.md for architectural changes
