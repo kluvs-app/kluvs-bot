@@ -93,11 +93,11 @@ def setup_admin_commands(bot):
 
     # ── Admin Help (guild owner or club admin+) ──────────────────────────────
 
-    @bot.command(name="help", help="Show admin command reference")
+    @bot.command(name="admin_help", help="Show admin command reference")
     async def admin_help(ctx: commands.Context):
         """
         Display admin command reference for guild owners and club admins.
-        Usage: !help
+        Usage: !admin_help
         """
         if not await _can_manage_clubs(ctx):
             await ctx.send("❌ You need to be a guild owner or club admin to use this command.")

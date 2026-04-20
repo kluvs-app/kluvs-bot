@@ -701,14 +701,14 @@ class TestAdminHelpCommand(unittest.IsolatedAsyncioTestCase):
     async def test_help_denied_for_non_admin(self):
         ctx = _make_ctx(is_owner=False, author_id="999")
         self.bot.api.find_club_in_channel.return_value = None
-        await self.commands["help"]["func"](ctx)
+        await self.commands["admin_help"]["func"](ctx)
         ctx.send.assert_called_once_with("❌ You need to be a guild owner or club admin to use this command.")
         args = ctx.send.call_args.args[0]
         self.assertNotIn("embed", ctx.send.call_args.kwargs)
 
     async def test_help_allowed_for_guild_owner(self):
         ctx = _make_ctx(is_owner=True)
-        await self.commands["help"]["func"](ctx)
+        await self.commands["admin_help"]["func"](ctx)
         ctx.send.assert_called_once()
         self.assertIn("embed", ctx.send.call_args.kwargs)
         embed = ctx.send.call_args.kwargs["embed"]
@@ -718,7 +718,7 @@ class TestAdminHelpCommand(unittest.IsolatedAsyncioTestCase):
         ctx = _make_ctx(is_owner=False, author_id="111")
         club = _club_with_admin("111")
         self.bot.api.find_club_in_channel.return_value = club
-        await self.commands["help"]["func"](ctx)
+        await self.commands["admin_help"]["func"](ctx)
         ctx.send.assert_called_once()
         self.assertIn("embed", ctx.send.call_args.kwargs)
         embed = ctx.send.call_args.kwargs["embed"]
