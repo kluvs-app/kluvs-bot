@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="quill-bot",
+    name="kluvs-bot",
     version="0.0.1",
     description="A Discord bot for managing book clubs",
     author="Ivan Garza Bermea",
@@ -19,7 +19,7 @@ setup(
     python_requires=">=3.8",
     entry_points={
         'console_scripts': [
-            'quill-bot=main:main',
+            'kluvs-bot=main:main',
         ],
     },
 )

@@ -89,7 +89,7 @@ class TestVersionCommand(unittest.IsolatedAsyncioTestCase):
 
     async def test_version_success(self):
         ctx = _make_ctx()
-        setup_content = 'setup(name="quill-bot", version="0.0.1")'
+        setup_content = 'setup(name="kluvs-bot", version="0.0.1")'
         with patch("builtins.open", mock_open(read_data=setup_content)):
             with patch("cogs.admin_commands.os.path.join", return_value="setup.py"):
                 with patch("cogs.admin_commands.os.path.dirname", return_value="/mock"):
@@ -99,7 +99,7 @@ class TestVersionCommand(unittest.IsolatedAsyncioTestCase):
 
     async def test_version_not_found(self):
         ctx = _make_ctx()
-        with patch("builtins.open", mock_open(read_data="setup(name='quill-bot')")):
+        with patch("builtins.open", mock_open(read_data="setup(name='kluvs-bot')")):
             with patch("os.path.join", return_value="setup.py"):
                 with patch("os.path.dirname", return_value="/mock"):
                     await self.commands["version"]["func"](ctx)

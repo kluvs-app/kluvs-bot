@@ -1,7 +1,7 @@
 # Kluvs - Discord bot
 
-[![Tests](https://github.com/kluvs-api/kluvs-bot/workflows/Run%20Tests/badge.svg)](https://github.com/kluvs-api/kluvs-bot/actions)
-[![codecov](https://codecov.io/gh/kluvs-api/kluvs-bot/branch/main/graph/badge.svg)](https://codecov.io/gh/kluvs-api/kluvs-bot)
+[![Tests](https://github.com/kluvs-app/kluvs-bot/workflows/Run%20Tests/badge.svg)](https://github.com/kluvs-app/kluvs-bot/actions)
+[![codecov](https://codecov.io/gh/kluvs-app/kluvs-bot/branch/main/graph/badge.svg)](https://codecov.io/gh/kluvs-app/kluvs-bot)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Discord.py](https://img.shields.io/badge/discord.py-latest-blue.svg)](https://github.com/Rapptz/discord.py)
 
@@ -88,8 +88,8 @@ Quill has a friendly librarian personality with:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/kluvs-api/kluvs-bot.git
-   cd quill-bot
+   git clone https://github.com/kluvs-app/kluvs-bot.git
+   cd kluvs-bot
    ```
 
 2. **Install dependencies:**
@@ -133,8 +133,8 @@ Quill has a friendly librarian personality with:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/kluvs-api/kluvs-bot.git
-   cd quill-bot
+   git clone https://github.com/kluvs-app/kluvs-bot.git
+   cd kluvs-bot
    ```
 
 2. **Create and activate virtual environment:**
@@ -203,7 +203,7 @@ coverage html
 ### Project Structure
 
 ```
-quill-bot/
+kluvs-bot/
 ├── api/                    # Supabase Edge Functions API client
 ├── cogs/                   # Discord command modules
 │   ├── admin_commands.py
@@ -305,7 +305,7 @@ This project is currently unlicensed. See [TERMS.md](TERMS.md) for usage terms.
 
 **Maintainer:** Ivan Garza
 **Email:** ivangb6@gmail.com
-**Repository:** https://github.com/kluvs-api/kluvs-bot.git
+**Repository:** https://github.com/kluvs-app/kluvs-bot.git
 
 ## Acknowledgments
 

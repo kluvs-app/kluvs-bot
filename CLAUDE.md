@@ -9,7 +9,7 @@ This document provides comprehensive context about the Kluvs Discord bot for AI 
 **Language:** Python 3.9+
 **Architecture:** Modular command-based bot with external API integration
 **Current Version:** 0.0.1
-**Repository:** https://github.com/kluvs-api/quill-bot.git
+**Repository:** https://github.com/kluvs-app/kluvs-bot.git
 
 ### Purpose
 
@@ -18,7 +18,7 @@ Quill is a Discord bot designed to manage book club activities across multiple D
 ## Project Structure
 
 ```
-quill-bot/
+kluvs-bot/
 ├── api/                    # Supabase Edge Functions API client
 │   └── bookclub_api.py    # Full REST API client (716 lines)
 ├── cogs/                   # Discord command modules (organized by category)
@@ -480,5 +480,5 @@ The bot communicates with a Supabase backend via Edge Functions (serverless):
 
 ### Contact
 **Maintainer:** Ivan Garza (ivangb6@gmail.com)
-**Repository:** https://github.com/kluvs-api/quill-bot.git
+**Repository:** https://github.com/kluvs-app/kluvs-bot.git
 **Discord Install:** https://discord.com/oauth2/authorize?client_id=1327910712454152275
