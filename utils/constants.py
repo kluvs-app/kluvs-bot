@@ -16,7 +16,6 @@ COLORS = {
     "info": Color.blue(),
     "warning": Color.yellow(),
     "error": Color.red(),
-    "fun": Color.orange(),
     "purp": Color.purple(),
     "royal": Color.gold(),
     "misc": Color.teal(),
@@ -26,28 +25,6 @@ COLORS = {
 # Message templates
 GREETINGS = ['I am Quill', '👀', 'Let\'s get reading!']
 REACTIONS = ['⚡️', '👽', '🍄', '🌙', '🔥', '👾', '🦉', '🐺', '🍁']
-
-# Fun facts for the funfact command
-FUN_FACTS = [
-    'Abibliophobia is the fear of running out of reading material.',
-    'The Harvard University library has four law books bound in human skin.',
-    'The Adventures of Tom Sawyer is the first book written with a typewriter.',
-    'The name Wendy was made up for the book Peter Pan.',
-    'People in Iceland read more books per capita than any other country.',
-    'J.R.R. Tolkien typed the entire Lord of the Rings trilogy with two fingers.',
-    'Up to 50 books can be made from 1 tree.',
-    'Bibliosmia is the word for loving the smell of old books.'
-]
-
-# Fun fact closers
-FACT_CLOSERS = [
-    'Did you know? 🤓',
-    'Riddle me this ❔❓',
-    'Knowledge is power! 💡',
-    'Now you know ‼️',
-    'Food for thought! 🍎',
-    'Curiosity never killed the bookworm! 🐛'
-]
 
 # Daily reading reminders
 READING_REMINDERS = [

@@ -138,11 +138,9 @@ class TestGeneralCommandsComprehensive(unittest.IsolatedAsyncioTestCase):
         call_args = interaction.response.send_message.call_args
         embed = call_args.kwargs['embed']
 
-        # Check that all categories are present
+        # Check that reading commands are present
         fields_text = ' '.join([f.name for f in embed.fields])
         self.assertIn('Reading Commands', fields_text)
-        self.assertIn('Fun Commands', fields_text)
-        self.assertIn('Utility Commands', fields_text)
 
 
 if __name__ == '__main__':
