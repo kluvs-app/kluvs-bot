@@ -6,6 +6,25 @@ from unittest.mock import patch, MagicMock, AsyncMock
 import asyncio
 
 from services.openai_service import OpenAIService
+from openai import RateLimitError, APIConnectionError, APIError, OpenAIError
+
+
+# Create testable exception subclasses with simple constructors
+class TestRateLimitError(RateLimitError):
+    def __init__(self, message="Rate limit"):
+        self.message = message
+
+class TestAPIConnectionError(APIConnectionError):
+    def __init__(self, message="Connection error"):
+        self.message = message
+
+class TestAPIError(APIError):
+    def __init__(self, message="API error"):
+        self.message = message
+
+class TestOpenAIError(OpenAIError):
+    def __init__(self, message="OpenAI error"):
+        self.message = message
 
 class TestOpenAIService(unittest.TestCase):
     """Test cases for OpenAI service"""
@@ -28,6 +47,26 @@ class TestOpenAIService(unittest.TestCase):
         # Already tested in setUp, but we can add more assertions if needed
         self.assertIsNotNone(self.openai_service.client)
 
+    def test_init_with_empty_api_key(self):
+        """Test initialization with empty API key raises ValueError"""
+        with self.assertRaises(ValueError):
+            OpenAIService("")
+
+    def test_create_chat_completion_empty_messages(self):
+        """Test create_chat_completion with empty messages raises ValueError"""
+        with self.assertRaises(ValueError):
+            self.openai_service.create_chat_completion([])
+
+    def test_create_chat_completion_non_list_messages(self):
+        """Test create_chat_completion with non-list messages raises ValueError"""
+        with self.assertRaises(ValueError):
+            self.openai_service.create_chat_completion("not a list")
+
+    def test_create_chat_completion_malformed_message(self):
+        """Test create_chat_completion with malformed message raises ValueError"""
+        with self.assertRaises(ValueError):
+            self.openai_service.create_chat_completion([{"role": "user"}])  # Missing 'content'
+
     @patch('builtins.print')
     def test_create_chat_completion_success(self, mock_print):
         """Test the create_chat_completion method succeeds"""
@@ -35,14 +74,14 @@ class TestOpenAIService(unittest.TestCase):
         mock_response = MagicMock()
         mock_response.choices[0].message.content = "This is a test response"
         self.mock_openai_client.chat.completions.create.return_value = mock_response
-        
+
         # Call the method under test
         messages = [{"role": "user", "content": "Test prompt"}]
         response = self.openai_service.create_chat_completion(messages)
-        
+
         # Verify the client was called with the right parameters
         self.mock_openai_client.chat.completions.create.assert_called_once()
-        
+
         # Verify the response is correct
         self.assertEqual(response, "This is a test response")
 
@@ -127,8 +166,121 @@ class TestOpenAIService(unittest.TestCase):
             # Verify the response is as expected
             self.assertEqual(response, "I couldn't generate a response at this time. Please try again later.")
 
+
     @patch('builtins.print')
-    @patch('time.sleep')  # Patch sleep to avoid delays
+    @patch('time.sleep')
+    def test_create_chat_completion_rate_limit_retry(self, mock_sleep, mock_print):
+        """Test RateLimitError triggers retries"""
+        mock_response = MagicMock()
+        mock_response.choices[0].message.content = "Success after rate limit"
+
+        # Fail twice with RateLimitError, then succeed
+        self.mock_openai_client.chat.completions.create.side_effect = [
+            TestRateLimitError("Rate limited"),
+            TestRateLimitError("Rate limited"),
+            mock_response
+        ]
+
+        messages = [{"role": "user", "content": "Test"}]
+        response = self.openai_service.create_chat_completion(messages, max_retries=3)
+
+        # Should succeed after retries
+        self.assertEqual(response, "Success after rate limit")
+        # API called 3 times (1 initial + 2 retries before success)
+        self.assertEqual(self.mock_openai_client.chat.completions.create.call_count, 3)
+        # Sleep called twice with exponential backoff
+        self.assertEqual(mock_sleep.call_count, 2)
+
+    @patch('builtins.print')
+    @patch('time.sleep')
+    def test_create_chat_completion_connection_error_retry(self, mock_sleep, mock_print):
+        """Test APIConnectionError triggers retries"""
+        mock_response = MagicMock()
+        mock_response.choices[0].message.content = "Success after connection error"
+
+        # Fail once with connection error, then succeed
+        self.mock_openai_client.chat.completions.create.side_effect = [
+            TestAPIConnectionError("Connection lost"),
+            mock_response
+        ]
+
+        messages = [{"role": "user", "content": "Test"}]
+        response = self.openai_service.create_chat_completion(messages, max_retries=2)
+
+        self.assertEqual(response, "Success after connection error")
+        self.assertEqual(self.mock_openai_client.chat.completions.create.call_count, 2)
+
+    @patch('builtins.print')
+    @patch('time.sleep')
+    def test_create_chat_completion_api_error_retry(self, mock_sleep, mock_print):
+        """Test APIError triggers retries"""
+        mock_response = MagicMock()
+        mock_response.choices[0].message.content = "Success after API error"
+
+        self.mock_openai_client.chat.completions.create.side_effect = [
+            TestAPIError("Bad request"),
+            mock_response
+        ]
+
+        messages = [{"role": "user", "content": "Test"}]
+        response = self.openai_service.create_chat_completion(messages, max_retries=2)
+
+        self.assertEqual(response, "Success after API error")
+
+    @patch('builtins.print')
+    def test_create_chat_completion_openai_error_raises(self, mock_print):
+        """Test OpenAIError raises Exception"""
+        self.mock_openai_client.chat.completions.create.side_effect = TestOpenAIError("Auth failed")
+
+        messages = [{"role": "user", "content": "Test"}]
+        with self.assertRaises(Exception) as context:
+            self.openai_service.create_chat_completion(messages)
+
+        self.assertIn("Unrecoverable error", str(context.exception))
+
+    @patch('builtins.print')
+    @patch('time.sleep')
+    def test_create_chat_completion_max_retries_exhausted(self, mock_sleep, mock_print):
+        """Test max retries exhausted returns None"""
+        # Always fail with retryable error
+        self.mock_openai_client.chat.completions.create.side_effect = TestRateLimitError("Rate limited")
+
+        messages = [{"role": "user", "content": "Test"}]
+        response = self.openai_service.create_chat_completion(messages, max_retries=2)
+
+        # Should return None after exhausting retries
+        self.assertIsNone(response)
+        # API called 3 times (1 initial + 2 retries)
+        self.assertEqual(self.mock_openai_client.chat.completions.create.call_count, 3)
+
+    @patch('builtins.print')
+    def test_create_chat_completion_with_custom_retry_params(self, mock_print):
+        """Test that custom retry parameters are accepted"""
+        mock_response = MagicMock()
+        mock_response.choices[0].message.content = "Success with custom params"
+        self.mock_openai_client.chat.completions.create.return_value = mock_response
+
+        messages = [{"role": "user", "content": "Test"}]
+
+        # Call with custom retry parameters
+        response = self.openai_service.create_chat_completion(
+            messages,
+            model="gpt-4",
+            temperature=0.5,
+            max_retries=5,
+            retry_delay=2.0
+        )
+
+        # Verify the response is correct
+        self.assertEqual(response, "Success with custom params")
+
+        # Verify the API was called with the right model and temperature
+        call_args = self.mock_openai_client.chat.completions.create.call_args
+        self.assertEqual(call_args.kwargs['model'], "gpt-4")
+        self.assertEqual(call_args.kwargs['temperature'], 0.5)
+
+    @patch('builtins.print')
+    @patch('time.sleep')
     def test_create_chat_completion_rate_limit(self, mock_sleep, mock_print):
         """Test handling rate limit errors with retries"""
         import time  # Add explicit import
