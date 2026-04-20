@@ -28,7 +28,7 @@ URL_EDGE_FUNCTION=your_edge_function_url
 
 ## Architecture
 
-**Cog pattern:** Commands organized by area (general, session, admin)
+**Cog pattern:** Commands organized by area (general, session, member, admin)
 
 **Service layer:** `OpenAIService` (GPT), `BookClubAPI` (REST client)
 
@@ -41,7 +41,7 @@ URL_EDGE_FUNCTION=your_edge_function_url
 ```
 kluvs-bot/
 ├── api/              # Supabase API client
-├── cogs/             # Commands (general, session, admin)
+├── cogs/             # Commands (general, session, member, admin)
 ├── events/           # Message handlers
 ├── services/         # OpenAI integration
 ├── tests/            # Unit tests
