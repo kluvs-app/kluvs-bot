@@ -179,27 +179,24 @@ def setup_admin_commands(bot):
             await ctx.send("❌ You need to be a club admin or owner to use this command.")
             return
         try:
+            # Resolve or create the caller's member record so we can pass
+            # them as the first member in the club payload — the backend
+            # promotes index-0 to owner automatically.
+            existing = bot.api.get_member_by_discord_id(str(ctx.author.id))
+            if existing:
+                caller = {"id": existing["id"], "name": existing["name"]}
+            else:
+                created = bot.api.create_member({
+                    "name": ctx.author.display_name,
+                    "discord_id": str(ctx.author.id),
+                })
+                member_data = created.get("member", created)
+                caller = {"id": member_data["id"], "name": member_data["name"]}
+
             bot.api.create_club(
-                {"name": name, "discord_channel": channel_id},
+                {"name": name, "discord_channel": channel_id, "members": [caller]},
                 str(ctx.guild.id)
             )
-            # Auto-assign caller as club owner
-            club_data = bot.api.find_club_in_channel(channel_id, str(ctx.guild.id))
-            if club_data:
-                existing = bot.api.get_member_by_discord_id(str(ctx.author.id))
-                if existing:
-                    current_club_ids = [c["id"] for c in existing.get("clubs", [])]
-                    bot.api.update_member(existing["id"], {
-                        "clubs": current_club_ids + [club_data["id"]],
-                        "club_roles": {club_data["id"]: "owner"}
-                    })
-                else:
-                    bot.api.create_member({
-                        "name": ctx.author.display_name,
-                        "discord_id": str(ctx.author.id),
-                        "clubs": [club_data["id"]],
-                        "club_roles": {club_data["id"]: "owner"}
-                    })
             embed = create_embed(
                 title="✅ Club Created",
                 description=f"Book club **{name}** created in <#{channel_id}>. You are the owner.",

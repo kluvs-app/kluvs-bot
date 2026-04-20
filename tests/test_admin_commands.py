@@ -200,11 +200,9 @@ class TestCanManageClubs(unittest.IsolatedAsyncioTestCase):
     async def test_guild_owner_can_create_club_without_being_admin(self):
         """Guild owner should be able to create a club even if not a club admin."""
         ctx = _make_ctx(author_id="111", is_owner=True)
-        club = _club_with_admin("111")
-        self.bot.api.find_club_in_channel.return_value = club
         self.bot.api.create_club.return_value = {"success": True}
         self.bot.api.get_member_by_discord_id.return_value = None
-        self.bot.api.create_member.return_value = {"success": True}
+        self.bot.api.create_member.return_value = {"member": {"id": 1, "name": "Owner"}}
         await self.commands["club_create"]["func"](ctx, args="New Club")
         self.bot.api.create_club.assert_called_once()
 
@@ -264,17 +262,26 @@ class TestClubCommands(unittest.IsolatedAsyncioTestCase):
 
     async def test_club_create_success(self):
         ctx = _make_ctx(author_id="111")
-        self.bot.api.find_club_in_channel.return_value = self.club
-        self.bot.api.create_club.return_value = {"success": True}
         self.bot.api.get_member_by_discord_id.return_value = None
-        self.bot.api.create_member.return_value = {"success": True}
+        self.bot.api.create_member.return_value = {"member": {"id": 1, "name": "Owner"}}
+        self.bot.api.create_club.return_value = {"success": True}
         await self.commands["club_create"]["func"](ctx, args="Sci-Fi Club")
-        self.bot.api.create_club.assert_called_once()
+        call_payload = self.bot.api.create_club.call_args[0][0]
+        self.assertEqual(call_payload["members"], [{"id": 1, "name": "Owner"}])
         self.assertIn("embed", ctx.send.call_args.kwargs)
+
+    async def test_club_create_success_existing_member(self):
+        ctx = _make_ctx(author_id="111")
+        self.bot.api.get_member_by_discord_id.return_value = {"id": 99, "name": "Alice"}
+        self.bot.api.create_club.return_value = {"success": True}
+        await self.commands["club_create"]["func"](ctx, args="Sci-Fi Club")
+        call_payload = self.bot.api.create_club.call_args[0][0]
+        self.assertEqual(call_payload["members"], [{"id": 99, "name": "Alice"}])
+        self.bot.api.create_member.assert_not_called()
 
     async def test_club_create_api_error(self):
         ctx = _make_ctx(author_id="111")
-        self.bot.api.find_club_in_channel.return_value = self.club
+        self.bot.api.get_member_by_discord_id.return_value = {"id": 99, "name": "Alice"}
         self.bot.api.create_club.side_effect = APIError("server error")
         await self.commands["club_create"]["func"](ctx, args="Sci-Fi Club")
         self.assertIn("❌", ctx.send.call_args.args[0])
@@ -327,30 +334,25 @@ class TestClubCommands(unittest.IsolatedAsyncioTestCase):
 
     async def test_club_create_api_error_on_create(self):
         ctx = _make_ctx(author_id="111")
-        self.bot.api.find_club_in_channel.return_value = self.club
+        self.bot.api.get_member_by_discord_id.return_value = {"id": 99, "name": "Alice"}
         self.bot.api.create_club.side_effect = APIError("failed")
         await self.commands["club_create"]["func"](ctx, args="New Club")
         self.assertIn("❌", ctx.send.call_args.args[0])
 
     async def test_club_create_owner_assigned_existing_member(self):
         ctx = _make_ctx(author_id="111")
-        self.bot.api.find_club_in_channel.return_value = self.club
+        self.bot.api.get_member_by_discord_id.return_value = {"id": 99, "name": "Alice"}
         self.bot.api.create_club.return_value = {"success": True}
-        self.bot.api.get_member_by_discord_id.return_value = {
-            "id": 99, "clubs": [{"id": "other-club"}]
-        }
-        self.bot.api.update_member.return_value = {"success": True}
         await self.commands["club_create"]["func"](ctx, args="Sci-Fi Club")
-        self.bot.api.update_member.assert_called()
-        call_kwargs = self.bot.api.update_member.call_args[0][1]
-        self.assertEqual(call_kwargs["club_roles"], {"club-1": "owner"})
+        call_payload = self.bot.api.create_club.call_args[0][0]
+        self.assertEqual(call_payload["members"][0]["id"], 99)
+        self.bot.api.update_member.assert_not_called()
 
     async def test_club_create_with_channel_flag(self):
         ctx = _make_ctx(author_id="111", is_owner=True)
-        self.bot.api.find_club_in_channel.return_value = self.club
-        self.bot.api.create_club.return_value = {"success": True}
         self.bot.api.get_member_by_discord_id.return_value = None
-        self.bot.api.create_member.return_value = {"success": True}
+        self.bot.api.create_member.return_value = {"member": {"id": 1, "name": "Owner"}}
+        self.bot.api.create_club.return_value = {"success": True}
         await self.commands["club_create"]["func"](ctx, args="Sci-Fi Club --channel 123456")
         call_args = self.bot.api.create_club.call_args[0][0]
         self.assertEqual(call_args["discord_channel"], "123456")
