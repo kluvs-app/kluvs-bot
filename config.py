@@ -21,8 +21,7 @@ class BotConfig:
             self.SUPABASE_URL = os.getenv("SUPABASE_URL")
             self.SUPABASE_KEY = os.getenv("SUPABASE_KEY")
         
-        # API Keys    
-        self.KEY_WEATHER = os.getenv("KEY_WEATHER")
+        # API Keys
         self.KEY_OPENAI = os.getenv("KEY_OPEN_AI")
         
         # Print debug information
@@ -34,7 +33,6 @@ class BotConfig:
     def _debug_print(self):
         """Print debug information about configuration"""
         print(f"[DEBUG] TOKEN: {'SET' if self.TOKEN else 'NOT SET'}")
-        print(f"[DEBUG] KEY_WEATHER: {'SET' if self.KEY_WEATHER else 'NOT SET'}")
         print(f"[DEBUG] KEY_OPENAI: {'SET' if self.KEY_OPENAI else 'NOT SET'}")
     
     def _validate(self):
