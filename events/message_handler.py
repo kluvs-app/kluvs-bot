@@ -39,6 +39,30 @@ def setup_message_handlers(bot):
         await bot.process_commands(message)
 
     @bot.event
+    async def on_guild_join(guild):
+        """Post a welcome embed when the bot joins a new server."""
+        print(f"Joined new guild: {guild.name} ({guild.id})")
+        channel = guild.system_channel
+        if channel is None:
+            for c in guild.text_channels:
+                if c.permissions_for(guild.me).send_messages:
+                    channel = c
+                    break
+        if channel is None:
+            print(f"[WARN] No writable channel found in guild {guild.id}")
+            return
+        embed = create_embed(
+            title="📚 Hi! I'm Quill, your book club librarian!",
+            description=(
+                "I help book clubs manage reading sessions, track members, and keep discussions organized.\n\n"
+                "**To get started**, run `!setup` in your book club channel and I'll walk you through everything."
+            ),
+            color_key="info",
+            footer="Run !setup to register your server and create your first book club."
+        )
+        await channel.send(embed=embed)
+
+    @bot.event
     async def on_member_join(member):
         """Welcome new members."""
         print(f"New member joined: {member.name}")

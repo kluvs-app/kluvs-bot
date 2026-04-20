@@ -91,6 +91,149 @@ def setup_admin_commands(bot):
             )
             await ctx.send(embed=embed)
 
+    # ── Admin Help (guild owner or club admin+) ──────────────────────────────
+
+    @bot.command(name="admin_help", help="Show admin command reference")
+    async def admin_help(ctx: commands.Context):
+        """
+        Display admin command reference for guild owners and club admins.
+        Usage: !admin_help
+        """
+        if not await _can_manage_clubs(ctx):
+            await ctx.send("❌ You need to be a guild owner or club admin to use this command.")
+            return
+
+        embed = create_embed(
+            title="📖 Admin Commands Reference",
+            description="Commands for managing your book club",
+            color_key="info",
+            fields=[
+                {
+                    "name": "🔧 Setup & Server",
+                    "value": (
+                        "`!setup` — First-run wizard: register server and create a club\n"
+                        "`!server_register` — Register this Discord server\n"
+                        "`!server_update <name>` — Update server name\n"
+                        "`!server_delete` — Delete server and all data"
+                    ),
+                    "inline": False
+                },
+                {
+                    "name": "📚 Club Management",
+                    "value": (
+                        "`!club_create <name>` — Create a new book club\n"
+                        "`!club_update [--name <name>] [--new-channel <id>]` — Update club details\n"
+                        "`!club_delete` — Delete the club in this channel"
+                    ),
+                    "inline": False
+                },
+                {
+                    "name": "👥 Member Management",
+                    "value": (
+                        "`!member_add @User` — Add a member to the club\n"
+                        "`!member_remove <id>` — Remove a member\n"
+                        "`!member_role <id> <admin|member>` — Set member role"
+                    ),
+                    "inline": False
+                },
+                {
+                    "name": "📖 Session Management",
+                    "value": (
+                        "`!session_create \"<title>\" <author>` — Create a reading session\n"
+                        "`!session_update [--due-date YYYY-MM-DD] [--book \"<title>|<author>\"]` — Update session\n"
+                        "`!session_delete` — Delete the active session"
+                    ),
+                    "inline": False
+                },
+                {
+                    "name": "ℹ️ Other",
+                    "value": "`!version` — Show bot version",
+                    "inline": False
+                }
+            ],
+            footer="Use a command name for more details (e.g., !club_create --help)"
+        )
+        await ctx.send(embed=embed)
+
+    # ── Setup wizard (guild owner only) ──────────────────────────────────────
+
+    @bot.command(name="setup", help="First-run wizard: register server and create a book club")
+    async def setup(ctx: commands.Context):
+        """
+        Guided onboarding for new servers.
+        Usage: !setup
+        """
+        if not _check_guild_owner(ctx):
+            await ctx.send("❌ Only the server owner can run `!setup`.")
+            return
+
+        guild_id = str(ctx.guild.id)
+
+        # Register server (idempotent — inform and continue if already registered)
+        try:
+            bot.api.register_server(guild_id, ctx.guild.name)
+        except APIError as e:
+            if "already" in str(e).lower() or "duplicate" in str(e).lower():
+                await ctx.send("ℹ️ This server is already registered. Continuing to club setup…")
+            else:
+                await ctx.send(f"❌ Failed to register server: {e}")
+                return
+
+        await ctx.send("✅ Server registered! What should I call your book club?")
+
+        def check(m):
+            return m.author == ctx.author and m.channel == ctx.channel
+
+        try:
+            msg = await bot.wait_for("message", timeout=60.0, check=check)
+        except TimeoutError:
+            await ctx.send("⏰ Setup timed out. Run `!setup` again when you're ready.")
+            return
+
+        club_name = msg.content.strip()
+        if not club_name:
+            await ctx.send("❌ Club name can't be empty. Run `!setup` again.")
+            return
+
+        channel_id = str(ctx.channel.id)
+
+        try:
+            existing = bot.api.get_member_by_discord_id(str(ctx.author.id))
+            if existing:
+                caller = {"id": existing["id"], "name": existing["name"]}
+            else:
+                created = bot.api.create_member({
+                    "name": ctx.author.display_name,
+                    "discord_id": str(ctx.author.id),
+                })
+                member_data = created.get("member", created)
+                caller = {"id": member_data["id"], "name": member_data["name"]}
+
+            bot.api.create_club(
+                {"name": club_name, "discord_channel": channel_id, "members": [caller]},
+                guild_id
+            )
+        except APIError as e:
+            await ctx.send(f"❌ Failed to create club: {e}")
+            return
+
+        embed = create_embed(
+            title="🎉 You're all set!",
+            description=(
+                f"**{club_name}** has been created in {ctx.channel.mention}.\n\n"
+                "**Available commands:**\n"
+                "`/session` — view the current reading session\n"
+                "`/book` — see the current book\n"
+                "`/duedate` — check the due date\n"
+                "`/discussions` — view scheduled discussions\n"
+                "`!session_create` — start a new session\n"
+                "`!member_add` — add members to the club"
+            ),
+            color_key="success",
+            footer="Happy reading! 📖"
+        )
+        await ctx.send(embed=embed)
+
     # ── Server commands (guild owner only) ───────────────────────────────────
 
     @bot.command(name="server_register", help="Register this Discord server with the bot")
