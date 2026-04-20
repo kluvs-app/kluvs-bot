@@ -28,6 +28,10 @@ A focused Discord bot for managing book clubs with session tracking, member mana
 - `/discussions` — View scheduled discussion topics
 - `/book_summary` — AI-generated book summary
 
+### Member Commands
+- `/join` — Join the book club in the current channel
+- `/leave` — Leave the book club in the current channel
+
 ### Admin Commands
 *Requires guild owner or club admin role*
 
