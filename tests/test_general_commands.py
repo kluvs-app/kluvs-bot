@@ -58,7 +58,7 @@ class TestGeneralCommands(unittest.IsolatedAsyncioTestCase):
         mock_create_embed.assert_called_once()
         args, kwargs = mock_create_embed.call_args
         self.assertEqual(kwargs['title'], "🦉 Quill's Orientation")
-        self.assertIn("Greetings human", kwargs['description'])
+        self.assertIn("Welcome to Kluvs", kwargs['description'])
         self.assertEqual(kwargs['color_key'], "info")
         
         # Check that the embed has fields
@@ -86,7 +86,7 @@ class TestGeneralCommands(unittest.IsolatedAsyncioTestCase):
         mock_create_embed.assert_called_once()
         args, kwargs = mock_create_embed.call_args
         self.assertEqual(kwargs['title'], "📚 Quill's Commands")
-        self.assertIn("Here's everything I can help you with", kwargs['description'])
+        self.assertIn("Here are all the commands", kwargs['description'])
         self.assertEqual(kwargs['color_key'], "info")
         
         # Check that the embed has fields for different command categories

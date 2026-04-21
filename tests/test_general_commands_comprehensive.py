@@ -103,7 +103,7 @@ class TestGeneralCommandsComprehensive(unittest.IsolatedAsyncioTestCase):
 
         # Verify embed properties
         self.assertIn("Quill's Commands", embed.title)
-        self.assertIn("help you", embed.description)
+        self.assertIn("commands available", embed.description)
 
     async def test_help_command_has_reading_commands(self):
         """Test that help command includes reading commands"""
@@ -121,8 +121,8 @@ class TestGeneralCommandsComprehensive(unittest.IsolatedAsyncioTestCase):
 
         # Check that reading commands are mentioned
         fields_text = ' '.join([f.name + f.value for f in embed.fields])
+        self.assertIn('/join', fields_text)
         self.assertIn('/session', fields_text)
-        self.assertIn('/book', fields_text)
 
     async def test_usage_command_has_all_categories(self):
         """Test that usage command includes all command categories"""
