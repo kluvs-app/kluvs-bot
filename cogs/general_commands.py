@@ -17,26 +17,23 @@ def setup_general_commands(bot):
     async def help_command(interaction: discord.Interaction):
         embed = create_embed(
             title="🦉 Quill's Orientation",
-            description="Greetings human!  I'm here to help you with all things about our book club.",
+            description="Welcome to Kluvs! I'm here to help you with all things about our book club.",
             color_key="info"
         )
 
         embed.add_field(
-            name=" How to use ❓",
-            value="You can execute `/usage` to see all available commands.\n\nHere's a few more commands to get you started.",
+            name="👤 New to this server?",
+            value="Start with `/join` to join the book club, then check `/session` to see the current book.\n\nUse `/usage` for all available commands.",
             inline=False
         )
 
         embed.add_field(
-            name="📖 Reading Commands",
-            value="• `/session` - Show all session details\n"
-                  "• `/book` - Show current book details\n"
-                  "• `/duedate` - Show the session's due date\n"
-                  "• `/discussions` - Show the session's discussion details",
+            name="👑 Server owner?",
+            value="Run `!setup` to initialize your server and create a book club.",
             inline=False
         )
 
-        embed.set_footer(text=f"Hope this helps! ✌️")
+        embed.set_footer(text=f"Happy reading! 📚")
         await interaction.response.send_message(embed=embed)
         print("Sent help command response.")
     
@@ -44,19 +41,33 @@ def setup_general_commands(bot):
     async def usage_command(interaction: discord.Interaction):
         embed = create_embed(
             title="📚 Quill's Commands",
-            description="Here's everything I can help you with!",
+            description="Here are all the commands available to you.",
             color_key="info"
         )
-        
+
         embed.add_field(
             name="📖 Reading Commands",
             value="• `/session` - Show all session details\n"
                   "• `/book` - Show current book details\n"
                   "• `/duedate` - Show the session's due date\n"
-                  "• `/discussions` - Show the session's discussion details",
+                  "• `/discussions` - Show the session's discussion details\n"
+                  "• `/book_summary` - AI-generated book summary",
             inline=False
         )
 
-        embed.set_footer(text=f"*Use / to access all commands!*")
+        embed.add_field(
+            name="👥 Member Commands",
+            value="• `/join` - Join the book club in the current channel\n"
+                  "• `/leave` - Leave the book club in the current channel",
+            inline=False
+        )
+
+        embed.add_field(
+            name="⚙️ Admin Commands",
+            value="Admins and server owners: type `!admin_help` for admin commands.",
+            inline=False
+        )
+
+        embed.set_footer(text=f"Use / for slash commands, ! for admin commands")
         await interaction.response.send_message(embed=embed)
         print("Sent usage command response.")
