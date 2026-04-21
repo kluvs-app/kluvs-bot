@@ -33,29 +33,26 @@ We chose `unittest` over pytest because:
 ```
 tests/
 ├── run_tests.py                              # Test runner script
-├── test_bookclub_api.py                      # API client tests (680+ lines)
-├── test_session_commands.py                  # Session command tests (340 lines)
+├── test_bookclub_api.py                      # API client tests
+├── test_session_commands.py                  # Session command tests
 ├── test_message_handler.py                   # Event handler tests
+├── test_message_handler_comprehensive.py     # Comprehensive message handler tests
 ├── test_schedulers.py                        # Scheduled task tests
+├── test_schedulers_comprehensive.py          # Comprehensive scheduler tests
 ├── test_openai_service.py                    # OpenAI service tests
-├── test_weather_service.py                   # Weather service tests
 ├── test_config.py                            # Configuration tests
 ├── test_embeds.py                            # Embed utility tests
 ├── test_admin_commands.py                    # Admin command tests
-├── test_general_commands_comprehensive.py    # Help/usage command tests
-├── test_utility_commands_comprehensive.py    # Utility command tests
-├── test_fun_commands_comprehensive.py        # Fun command tests
-├── test_fun_commands.py                      # (Legacy) Fun command tests
-├── test_general_commands.py                  # (Legacy) General command tests
-├── test_utility_commands.py                  # (Legacy) Utility command tests
-├── test_message_handler_comprehensive.py     # (Legacy) Message handler tests
-└── test_schedulers_comprehensive.py          # (Legacy) Scheduler tests
+├── test_general_commands.py                  # General command tests
+├── test_general_commands_comprehensive.py    # Comprehensive general command tests
+├── test_member_commands.py                   # Member command tests (join/leave)
+└── run_tests.py                              # Test runner and discovery
 ```
 
 ### Test File Naming Convention
 - All test files must start with `test_` to be discovered
 - Named after the module they test: `test_<module_name>.py`
-- Comprehensive test files include `_comprehensive` suffix
+- Comprehensive test files include `_comprehensive` suffix for deeper coverage
 
 ### Test Class Structure
 ```python
@@ -153,25 +150,25 @@ Configuration is in `.vscode/settings.json`:
 
 ## Coverage
 
-### Current Coverage: ~62%
+### Current Coverage: ~90% (89.87%)
 
 **100% Coverage Achieved:**
-- `events/message_handler.py` - Event handlers
-- `utils/schedulers.py` - Scheduled tasks
-- `services/weather_service.py` - Weather API
+- `api/__init__.py` - API module init
+- `cogs/general_commands.py` - Help/usage commands
 - `utils/constants.py` - Constants
 - `utils/embeds.py` - Discord embeds
-- `api/__init__.py` - API module init
+- `utils/schedulers.py` - Scheduled tasks
 
-**High Coverage (75%+):**
-- `api/bookclub_api.py` - 76% - Main API client
-- `config.py` - 82% - Configuration
+**High Coverage (90%+):**
+- `cogs/member_commands.py` - 90% - Join/leave commands
+- `cogs/session_commands.py` - 92.08% - Session management commands
+- `cogs/admin_commands.py` - 98.78% - Admin prefix commands
+- `config.py` - 95.65% - Configuration
+- `events/message_handler.py` - 96.30% - Event handlers
 
-**Excluded from Coverage:**
-- `tests/*` - Test files themselves
-- `main.py` - Entry point (just calls bot.run())
-- `bot.py` - Discord bot initialization (complex, hard to test)
-- `setup.py` - Package configuration
+**Good Coverage (75%+):**
+- `api/bookclub_api.py` - 77.18% - Main API client
+- `services/openai_service.py` - 75.90% - OpenAI integration
 
 ### Coverage Configuration
 See `.coveragerc` for configuration:
@@ -192,13 +189,6 @@ precision = 2
 [xml]
 output = coverage.xml
 ```
-
-### Coverage Goals
-- **Current**: 62%
-- **Target**: 70%+
-- **Priority areas for improvement**:
-  - Command cogs (currently 15-51%)
-  - OpenAI service (currently 53%)
 
 ## Writing Tests
 
@@ -389,7 +379,6 @@ Location: `.github/workflows/run-tests.yml`
 
 **Required GitHub Secrets:**
 - `DEV_TOKEN` - Discord bot token (for test environment)
-- `KEY_WEATHER` - Weatherbit API key
 - `KEY_OPEN_AI` - OpenAI API key
 - `CODECOV_TOKEN` - Codecov upload token
 
@@ -422,6 +411,7 @@ Coverage reports are automatically uploaded to [codecov.io](https://codecov.io) 
    - Interaction handling
    - Response formatting (embeds)
    - Error cases (no guild, no session, etc.)
+   - Member operations (join, leave)
 
 3. **Event Handlers (`events/message_handler.py`)**
    - Message processing
@@ -430,13 +420,12 @@ Coverage reports are automatically uploaded to [codecov.io](https://codecov.io) 
    - Member join events
 
 4. **Scheduled Tasks (`utils/schedulers.py`)**
-   - Time-based triggering (5PM Pacific)
-   - Probability checks (40% chance)
-   - Missing channel handling
+   - Task registration
+   - Time-based triggering
+   - Channel handling
 
 5. **Services**
    - OpenAI API calls and responses
-   - Weather API calls and formatting
    - Retry logic and error handling
 
 6. **Utilities**
@@ -456,7 +445,7 @@ Coverage reports are automatically uploaded to [codecov.io](https://codecov.io) 
 **We MOCK:**
 - ✅ Discord interactions (commands, messages, events)
 - ✅ HTTP requests (requests.get, requests.post, etc.)
-- ✅ External APIs (OpenAI, Weather, Supabase)
+- ✅ External APIs (OpenAI, Supabase)
 - ✅ Time/randomness (datetime, random)
 - ✅ File I/O operations
 
@@ -470,8 +459,9 @@ Coverage reports are automatically uploaded to [codecov.io](https://codecov.io) 
 **We aim for:**
 - **Business logic**: 80%+ coverage
 - **API clients**: 75%+ coverage
-- **Event handlers**: 100% coverage
-- **Utilities**: 90%+ coverage
+- **Event handlers**: 95%+ coverage
+- **Utilities**: 100% coverage
+- **Command cogs**: 90%+ coverage
 
 **We don't aim for:**
 - 100% coverage on everything (diminishing returns)
@@ -541,7 +531,7 @@ def test_something(self):
 When adding new code:
 1. Write tests for new functionality
 2. Ensure tests pass: `make test` (or `python tests/run_tests.py`)
-3. Check coverage doesn't decrease: `make coverage` (or `coverage run --source=. tests/run_tests.py && coverage report`)
+3. Check coverage doesn't decrease: `make coverage`
 4. All tests must pass before merging to `main`
 
 ## Resources
@@ -553,4 +543,4 @@ When adding new code:
 
 ---
 
-**Last Updated**: December 2025
+**Last Updated**: April 2026

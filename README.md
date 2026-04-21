@@ -14,7 +14,6 @@ A focused Discord bot for managing book clubs with session tracking, member mana
 - **Member Management** — Track participation and member details
 - **Discussion Scheduling** — Organize discussion topics for sessions
 - **AI Features** — Book summaries and chat with OpenAI GPT-3.5-turbo
-- **Daily Reminders** — Automated reading reminders (5 PM Pacific, 40% chance)
 - **Personality** — Librarian-themed responses and book-focused interactions
 
 ## Commands
