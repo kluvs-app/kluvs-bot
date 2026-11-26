@@ -2,11 +2,12 @@
 Tests for admin commands (slash command version)
 """
 import unittest
-from unittest.mock import patch, MagicMock, AsyncMock, mock_open
+from unittest.mock import patch, MagicMock, AsyncMock
 import discord
 
 from cogs.admin_commands import setup_admin_commands
 from api.bookclub_api import APIError, ResourceNotFoundError
+from version import __version__
 
 
 def _make_bot():
@@ -100,29 +101,10 @@ class TestVersionCommand(unittest.IsolatedAsyncioTestCase):
 
     async def test_version_success(self):
         interaction = _make_interaction()
-        setup_content = 'setup(name="kluvs-bot", version="0.0.1")'
-        with patch("builtins.open", mock_open(read_data=setup_content)):
-            with patch("cogs.admin_commands.os.path.join", return_value="setup.py"):
-                with patch("cogs.admin_commands.os.path.dirname", return_value="/mock"):
-                    await self.commands["version"]["func"](interaction)
+        await self.commands["version"]["func"](interaction)
         interaction.response.send_message.assert_called_once()
-        self.assertIn("embed", interaction.response.send_message.call_args.kwargs)
-
-    async def test_version_not_found(self):
-        interaction = _make_interaction()
-        with patch("builtins.open", mock_open(read_data="setup(name='kluvs-bot')")):
-            with patch("cogs.admin_commands.os.path.join", return_value="setup.py"):
-                with patch("cogs.admin_commands.os.path.dirname", return_value="/mock"):
-                    await self.commands["version"]["func"](interaction)
-        interaction.response.send_message.assert_called_once()
-
-    async def test_version_file_error(self):
-        interaction = _make_interaction()
-        with patch("builtins.open", side_effect=FileNotFoundError()):
-            with patch("cogs.admin_commands.os.path.join", return_value="setup.py"):
-                with patch("cogs.admin_commands.os.path.dirname", return_value="/mock"):
-                    await self.commands["version"]["func"](interaction)
-        interaction.response.send_message.assert_called_once()
+        embed = interaction.response.send_message.call_args.kwargs["embed"]
+        self.assertIn(f"v{__version__}", embed.title)
 
 
 class TestSetupCommand(unittest.IsolatedAsyncioTestCase):
@@ -1359,56 +1341,6 @@ class TestAdminHelpCommand(unittest.IsolatedAsyncioTestCase):
         self.bot.api.find_club_in_channel.return_value = None
         await self.commands["admin_help"]["func"](interaction)
         self.assertIn("❌", interaction.response.send_message.call_args.args[0])
-
-    @patch("builtins.open", new_callable=MagicMock)
-    @patch("re.search")
-    async def test_version_success(self, mock_search, mock_open):
-        """Test version command displays version."""
-        interaction = _make_interaction()
-        mock_match = MagicMock()
-        mock_match.group.return_value = "1.0.0"
-        mock_search.return_value = mock_match
-
-        mock_file_handle = MagicMock()
-        mock_file_handle.read.return_value = 'version = "1.0.0"'
-        mock_open.return_value.__enter__.return_value = mock_file_handle
-
-        await self.commands["version"]["func"](interaction)
-
-        interaction.response.send_message.assert_called_once()
-        call_args = interaction.response.send_message.call_args
-        self.assertIn("embed", call_args.kwargs)
-
-    @patch("builtins.open")
-    async def test_version_file_not_found(self, mock_open):
-        """Test version command when setup.py not found."""
-        interaction = _make_interaction()
-        mock_open.side_effect = FileNotFoundError()
-
-        await self.commands["version"]["func"](interaction)
-
-        interaction.response.send_message.assert_called_once()
-        call_args = interaction.response.send_message.call_args
-        self.assertIn("embed", call_args.kwargs)
-        # Should show error message
-        self.assertIn("Error", call_args.kwargs["embed"].title)
-
-    @patch("builtins.open")
-    @patch("re.search")
-    async def test_version_no_match(self, mock_search, mock_open):
-        """Test version command when version not found in file."""
-        interaction = _make_interaction()
-        mock_search.return_value = None
-        mock_file = MagicMock()
-        mock_file.__enter__.return_value.read.return_value = 'no version here'
-        mock_open.return_value = mock_file
-
-        await self.commands["version"]["func"](interaction)
-
-        interaction.response.send_message.assert_called_once()
-        call_args = interaction.response.send_message.call_args
-        self.assertIn("embed", call_args.kwargs)
-        self.assertIn("Error", call_args.kwargs["embed"].title)
 
 
 class TestBookAutocompleteAdvanced(unittest.IsolatedAsyncioTestCase):

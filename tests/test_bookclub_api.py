@@ -9,6 +9,7 @@ import asyncio
 # Add parent directory to path to import the BookClubAPI class
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from api.bookclub_api import BookClubAPI, ResourceNotFoundError, ValidationError, AuthenticationError, APIError
+from version import __version__
 
 class TestBookClubAPI(unittest.TestCase):
     def setUp(self):
@@ -22,6 +23,7 @@ class TestBookClubAPI(unittest.TestCase):
         # Verify the headers are set correctly
         self.assertEqual(self.api.headers["Content-Type"], "application/json")
         self.assertEqual(self.api.headers["Authorization"], "Bearer test-key")
+        self.assertEqual(self.api.headers["X-Kluvs-Client"], f"discord/{__version__}")
         self.assertEqual(self.api.functions_url, "http://test-url.supabase.co/functions/v1")
 
     # Server endpoint tests
