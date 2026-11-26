@@ -3,6 +3,8 @@ import asyncio
 import requests
 from typing import Dict, List, Optional, Union, Any
 
+from version import __version__
+
 class APIError(Exception):
     """Raised when there's an error communicating with the API."""
     pass
@@ -35,7 +37,8 @@ class BookClubAPI:
         self.functions_url = f"{self.base_url}/functions/v1"
         self.headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.api_key}"
+            "Authorization": f"Bearer {self.api_key}",
+            "X-Kluvs-Client": f"discord/{__version__}"
         }
     
     def _handle_request_error(self, error: requests.exceptions.RequestException, resource_type: str, resource_id: Optional[str] = None) -> None:

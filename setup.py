@@ -1,8 +1,10 @@
 from setuptools import setup, find_packages
 
+from version import __version__
+
 setup(
     name="kluvs-bot",
-    version="0.0.1",
+    version=__version__,
     description="A Discord bot for managing book clubs",
     author="Ivan Garza Bermea",
     author_email="ivangb6@gmail.com",

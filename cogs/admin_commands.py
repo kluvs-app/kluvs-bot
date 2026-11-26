@@ -2,7 +2,6 @@
 Admin commands (version, server, club, member, session management)
 """
 import re
-import os
 from datetime import datetime, timedelta
 from typing import Literal
 import discord
@@ -11,6 +10,7 @@ from discord import app_commands
 from utils.embeds import create_embed
 from utils.datetime_helpers import to_discord_timestamp, format_human_readable, parse_scheduled_at
 from api.bookclub_api import APIError, ResourceNotFoundError
+from version import __version__
 
 # Marker embedded in Discord event descriptions so discussion_sync can match them.
 _DISC_ID_RE = re.compile(r"discussion_id:(\S+)")
@@ -140,35 +140,13 @@ def setup_admin_commands(bot):
     @bot.tree.command(name="version", description="Shows the current version of the bot")
     @app_commands.guild_only()
     async def version(interaction: discord.Interaction):
-        """Extracts and displays the current version from setup.py"""
-        try:
-            setup_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "setup.py")
-            with open(setup_path, "r") as file:
-                setup_content = file.read()
-
-            version_match = re.search(r'version\s*=\s*["\']([^"\']+)["\']', setup_content)
-            if version_match:
-                v = version_match.group(1)
-                embed = create_embed(
-                    title=f"📚 Kluvs Bot version: v{v}",
-                    color_key="blank",
-                    timestamp=True
-                )
-                await interaction.response.send_message(embed=embed)
-            else:
-                embed = create_embed(
-                    title="❌ Error",
-                    description="Couldn't find version information in setup.py",
-                    color_key="error"
-                )
-                await interaction.response.send_message(embed=embed)
-        except Exception as e:
-            embed = create_embed(
-                title="❌ Error",
-                description=f"Error retrieving version: {str(e)}",
-                color_key="error"
-            )
-            await interaction.response.send_message(embed=embed)
+        """Displays the current bot version"""
+        embed = create_embed(
+            title=f"📚 Kluvs Bot version: v{__version__}",
+            color_key="blank",
+            timestamp=True
+        )
+        await interaction.response.send_message(embed=embed)
 
     # ── Admin Help (guild owner or club admin+) ──────────────────────────────
 
